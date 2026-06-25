@@ -24,7 +24,7 @@ class Medicamento(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # Identificação
-    substancia = Column(String(500), nullable=False, index=True)
+    substancia = Column(Text, nullable=False, index=True)
     produto = Column(String(500), nullable=False, index=True)
     apresentacao = Column(String(500), nullable=False)
     laboratorio = Column(String(300))
