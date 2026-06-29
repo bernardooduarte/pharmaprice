@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 
 import './App.css'
 
+import { DetalhesPage } from './pages/DetalhesPage'
 import { HomePage } from './pages/HomePage'
 import { ResultadosPage } from './pages/ResultadosPage'
 
@@ -20,6 +21,10 @@ function App() {
 
   if (pathname.startsWith('/resultados')) {
     return <ResultadosPage route={route} />
+  }
+
+  if (pathname.startsWith('/medicamentos/')) {
+    return <DetalhesPage route={route} />
   }
 
   return <HomePage />
