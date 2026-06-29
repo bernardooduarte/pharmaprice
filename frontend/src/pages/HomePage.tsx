@@ -50,6 +50,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
         </div>
 
         <form className="search-panel" onSubmit={handleSubmit}>
+          <p className="search-panel__heading">Buscar medicamento</p>
           <div className="search-panel__main">
             <SearchBar value={query} onChange={setQuery} error={error} />
             <button type="submit" className="search-panel__button">Buscar</button>
