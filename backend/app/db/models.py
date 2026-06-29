@@ -1,13 +1,24 @@
 """
-Modelos do banco de dados — PharmaPrice
+Modelos do banco de dados do PharmaPrice.
 """
-from datetime import datetime
-from decimal import Decimal
+from datetime import UTC, datetime
+
 from sqlalchemy import (
-    Column, Integer, String, Numeric, DateTime,
-    Text, Index, Boolean
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
 )
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, relationship
+
+
+def utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class Base(DeclarativeBase):
@@ -19,11 +30,12 @@ class Medicamento(Base):
     Registro de medicamento da tabela CMED/ANVISA.
     Cada linha da planilha vira um registro aqui.
     """
+
     __tablename__ = "medicamentos"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    # Identificação
+    # Identificacao
     substancia = Column(Text, nullable=False, index=True)
     produto = Column(String(500), nullable=False, index=True)
     apresentacao = Column(String(500), nullable=False)
@@ -33,24 +45,24 @@ class Medicamento(Base):
     registro = Column(String(50))
     ean1 = Column(String(20))
 
-    # Classificação
+    # Classificacao
     classe_terapeutica = Column(String(200))
-    tipo_produto = Column(String(100))   # Referência, Genérico, Similar, Biológico...
-    regime_preco = Column(String(50))    # Regulado / Liberado
+    tipo_produto = Column(String(100))
+    regime_preco = Column(String(50))
     tarja = Column(String(100))
 
-    # Preços — armazenamos os principais
+    # Precos armazenados da CMED
     pf_sem_impostos = Column(Numeric(12, 2))
     pf_0 = Column(Numeric(12, 2))
     pmc_sem_impostos = Column(Numeric(12, 2))
     pmc_0 = Column(Numeric(12, 2))
 
-    # PMC por alíquota de ICMS — colunas mais comuns por estado
-    pmc_12 = Column(Numeric(12, 2))    # AC, AL, CE, DF, ES, GO, MS, MT, PA, PI, RN, RO, RR, RS, SC, SE, TO
-    pmc_17 = Column(Numeric(12, 2))    # AM, AP, BA, MA, MG (alguns), PB, PE, PR, RJ, SP
-    pmc_18 = Column(Numeric(12, 2))    # MG (maioria), RS (alguns)
+    # PMC por aliquota de ICMS
+    pmc_12 = Column(Numeric(12, 2))
+    pmc_17 = Column(Numeric(12, 2))
+    pmc_18 = Column(Numeric(12, 2))
     pmc_19 = Column(Numeric(12, 2))
-    pmc_20 = Column(Numeric(12, 2))    # RJ (alguns)
+    pmc_20 = Column(Numeric(12, 2))
 
     # Flags
     restricao_hospitalar = Column(Boolean, default=False)
@@ -60,14 +72,53 @@ class Medicamento(Base):
     comercializacao_2025 = Column(String(10))
 
     # Rastreabilidade
-    data_coleta = Column(DateTime, nullable=False, default=datetime.utcnow)
+    data_coleta = Column(DateTime, nullable=False, default=utc_now)
     fonte_url = Column(Text)
-    data_publicacao_cmed = Column(String(50))  # ex: "10/06/2026 13h30min"
+    data_publicacao_cmed = Column(String(50))
 
-    # Índices para busca
+    historico_precos = relationship(
+        "HistoricoPreco",
+        back_populates="medicamento",
+        cascade="all, delete-orphan",
+        order_by="desc(HistoricoPreco.data_coleta)",
+    )
+
     __table_args__ = (
         Index("ix_medicamentos_substancia_produto", "substancia", "produto"),
     )
 
     def __repr__(self):
         return f"<Medicamento {self.produto} | {self.apresentacao}>"
+
+
+class HistoricoPreco(Base):
+    __tablename__ = "historico_precos"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    medicamento_id = Column(
+        Integer,
+        ForeignKey("medicamentos.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    preco = Column(Numeric(12, 2), nullable=False)
+    pmc = Column(Numeric(12, 2))
+    uf = Column(String(2), nullable=False)
+    fonte = Column(String(255), nullable=False)
+    tipo_fonte = Column(String(100), nullable=False)
+    data_coleta = Column(DateTime, nullable=False, default=utc_now)
+    observacao = Column(Text)
+    created_at = Column(DateTime, nullable=False, default=utc_now)
+
+    medicamento = relationship("Medicamento", back_populates="historico_precos")
+
+    __table_args__ = (
+        Index("ix_historico_precos_medicamento_id", "medicamento_id"),
+        Index("ix_historico_precos_uf", "uf"),
+        Index("ix_historico_precos_data_coleta", "data_coleta"),
+    )
+
+    def __repr__(self):
+        return (
+            f"<HistoricoPreco medicamento_id={self.medicamento_id} "
+            f"uf={self.uf} preco={self.preco}>"
+        )
