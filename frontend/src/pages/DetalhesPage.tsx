@@ -1,146 +1,166 @@
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from "react";
+import MedicamentoInfoCard from "../components/MedicamentoInfoCard";
+import PmcPricingCard from "../components/PmcPricingCard";
+import HistoricoPrecosTable from "../components/HistoricoPrecosTable";
 
-import { HistoricoPrecosTable } from '../components/HistoricoPrecosTable'
-import { MedicamentoInfoCard } from '../components/MedicamentoInfoCard'
-import { PmcPricingCard } from '../components/PmcPricingCard'
-import {
-  buscarComparacaoPrecos,
-  buscarHistoricoPrecos,
-  buscarMedicamentoDetalhe,
-  buildResultadosUrl,
-} from '../services/api'
-import type {
-  ComparacaoPrecos,
-  HistoricoPreco,
-  MedicamentoDetalhe,
-} from '../services/api'
+const API_BASE = "http://127.0.0.1:8000";
 
-type DetalhesPageProps = {
-  route: string
+interface Medicamento {
+  id: number;
+  produto: string;
+  substancia: string;
+  apresentacao: string;
+  laboratorio?: string;
+  tipo_produto?: string;
+  classe_terapeutica?: string;
+  data_publicacao?: string;
 }
 
-type DetalhesState = {
-  medicamento: MedicamentoDetalhe | null
-  historico: HistoricoPreco[]
-  comparacao: ComparacaoPrecos | null
+interface HistoricoPreco {
+  id: number;
+  farmacia: string;
+  preco: number;
+  uf: string;
+  coletado_em: string;
+  fonte?: string;
 }
 
-export function DetalhesPage({ route }: DetalhesPageProps) {
-  const { id, uf } = useMemo(() => {
-    const [pathname, queryString = ''] = route.split('?')
-    const searchParams = new URLSearchParams(queryString)
-    const routeId = pathname.split('/').filter(Boolean)[1] ?? ''
+interface ComparacaoPrecos {
+  medicamento_id: number;
+  produto: string;
+  uf: string;
+  pmc: number | null;
+  precos_encontrados: {
+    farmacia: string;
+    preco: number;
+    diferenca_pmc: number | null;
+    percentual_pmc: number | null;
+    coletado_em: string;
+  }[];
+}
 
-    return {
-      id: routeId,
-      uf: (searchParams.get('uf')?.trim().toUpperCase() || 'MG'),
-    }
-  }, [route])
+// Extrair id e uf da URL sem depender de react-router
+function parseUrl(): { id: string | null; uf: string } {
+  const path = window.location.pathname; // /medicamentos/123
+  const search = new URLSearchParams(window.location.search);
+  const partes = path.split("/");
+  const id = partes[partes.length - 1] || null;
+  const uf = search.get("uf") || "MG";
+  return { id, uf };
+}
 
-  const [state, setState] = useState<DetalhesState>({
-    medicamento: null,
-    historico: [],
-    comparacao: null,
-  })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+const DetalhesPage: React.FC = () => {
+  const { id, uf } = parseUrl();
+
+  const [medicamento, setMedicamento] = useState<Medicamento | null>(null);
+  const [historico, setHistorico] = useState<HistoricoPreco[]>([]);
+  const [comparacao, setComparacao] = useState<ComparacaoPrecos | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
-    let isActive = true
+    if (!id) {
+      setErro("ID do medicamento não encontrado na URL.");
+      setCarregando(false);
+      return;
+    }
 
     async function carregarDados() {
-      if (!id) {
-        setError('Medicamento inválido.')
-        setLoading(false)
-        return
-      }
-
-      setLoading(true)
-      setError(null)
-
+      setCarregando(true);
+      setErro(null);
       try {
-        const [medicamento, historico, comparacao] = await Promise.all([
-          buscarMedicamentoDetalhe(id, uf),
-          buscarHistoricoPrecos(id, uf),
-          buscarComparacaoPrecos(id, uf),
-        ])
+        const [resMed, resHist, resComp] = await Promise.all([
+          fetch(`${API_BASE}/medicamentos/${id}`),
+          fetch(`${API_BASE}/medicamentos/${id}/historico-precos?uf=${uf}`),
+          fetch(`${API_BASE}/medicamentos/${id}/comparacao-precos?uf=${uf}`),
+        ]);
 
-        if (!isActive) {
-          return
-        }
+        if (!resMed.ok) throw new Error(`Medicamento não encontrado (HTTP ${resMed.status})`);
 
-        setState({
-          medicamento,
-          historico,
-          comparacao,
-        })
-      } catch (requestError) {
-        if (!isActive) {
-          return
-        }
+        const [dataMed, dataHist, dataComp] = await Promise.all([
+          resMed.json(),
+          resHist.ok ? resHist.json() : [],
+          resComp.ok ? resComp.json() : null,
+        ]);
 
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : 'Ocorreu um erro inesperado ao carregar os detalhes.',
-        )
+        setMedicamento(dataMed);
+        setHistorico(Array.isArray(dataHist) ? dataHist : []);
+        setComparacao(dataComp);
+      } catch (e: unknown) {
+        setErro(e instanceof Error ? e.message : "Erro ao carregar dados.");
       } finally {
-        if (isActive) {
-          setLoading(false)
-        }
+        setCarregando(false);
       }
     }
 
-    void carregarDados()
+    carregarDados();
+  }, [id, uf]);
 
-    return () => {
-      isActive = false
-    }
-  }, [id, uf])
+  function voltarResultados() {
+    window.history.back();
+  }
 
-  const medicamento = state.medicamento
-  const comparacao = state.comparacao
-  const retornoResultados = buildResultadosUrl({
-    q: medicamento?.substancia ?? '',
-    uf,
-  })
+  if (carregando) {
+    return (
+      <div className="detalhes-container">
+        <div className="detalhes-loading">
+          <div className="spinner" />
+          <p>Carregando dados do medicamento…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (erro) {
+    return (
+      <div className="detalhes-container">
+        <div className="detalhes-erro card">
+          <p>⚠️ {erro}</p>
+          <button className="btn-voltar" onClick={voltarResultados}>
+            ← Voltar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!medicamento) return null;
 
   return (
-    <main className="detalhes-page">
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <a href="/">Início</a>
-        <span>/</span>
-        <a href={retornoResultados}>Resultados</a>
-        <span>/</span>
-        <span>Detalhes</span>
+    <div className="detalhes-container">
+      {/* Breadcrumb */}
+      <nav className="breadcrumb">
+        <a href="/" className="breadcrumb-link">Início</a>
+        <span className="breadcrumb-sep">›</span>
+        <button className="breadcrumb-link breadcrumb-btn" onClick={voltarResultados}>
+          Resultados
+        </button>
+        <span className="breadcrumb-sep">›</span>
+        <span className="breadcrumb-atual">{medicamento.produto}</span>
       </nav>
 
-      {loading ? (
-        <section className="feedback-card">
-          <p className="eyebrow">Carregando</p>
-          <h2>Buscando detalhes do medicamento...</h2>
-          <p>Aguarde enquanto carregamos informações oficiais, histórico e comparação.</p>
-        </section>
-      ) : null}
+      {/* Layout principal */}
+      <div className="detalhes-grid">
+        {/* Coluna esquerda — info principal */}
+        <div className="detalhes-col-principal">
+          <MedicamentoInfoCard medicamento={medicamento} uf={uf} />
+          <HistoricoPrecosTable historico={historico} uf={uf} />
+        </div>
 
-      {!loading && error ? (
-        <section className="feedback-card feedback-card--error">
-          <p className="eyebrow">Falha ao carregar</p>
-          <h2>Não foi possível abrir a tela de detalhes</h2>
-          <p>{error}</p>
-        </section>
-      ) : null}
-
-      {!loading && !error && medicamento && comparacao ? (
-        <>
-          <section className="detalhes-grid">
-            <MedicamentoInfoCard medicamento={medicamento} uf={uf} pmc={comparacao.pmc} />
+        {/* Coluna direita — PMC */}
+        <div className="detalhes-col-lateral">
+          {comparacao ? (
             <PmcPricingCard comparacao={comparacao} />
-          </section>
+          ) : (
+            <div className="card pmc-card pmc-indisponivel-card">
+              <span className="pmc-badge">CMED / PMC</span>
+              <p className="pmc-indisponivel">PMC não disponível para a UF selecionada.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
-          <HistoricoPrecosTable historico={state.historico} uf={uf} />
-        </>
-      ) : null}
-    </main>
-  )
-}
+export default DetalhesPage;

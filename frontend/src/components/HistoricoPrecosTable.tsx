@@ -1,76 +1,62 @@
-import type { HistoricoPreco } from '../services/api'
+import React from "react";
 
-type HistoricoPrecosTableProps = {
-  historico: HistoricoPreco[]
-  uf: string
+interface HistoricoPreco {
+  id: number;
+  farmacia: string;
+  preco: number;
+  uf: string;
+  coletado_em: string;
+  fonte?: string;
 }
 
-function formatCurrency(value: number | null) {
-  if (value === null) {
-    return 'Não informado'
-  }
-
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value)
+interface HistoricoPrecosTableProps {
+  historico: HistoricoPreco[];
+  uf: string;
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(new Date(value))
-}
-
-export function HistoricoPrecosTable({ historico, uf }: HistoricoPrecosTableProps) {
+const HistoricoPrecosTable: React.FC<HistoricoPrecosTableProps> = ({ historico, uf }) => {
   if (historico.length === 0) {
     return (
-      <section className="historico-card">
-        <div className="historico-card__header">
-          <p className="eyebrow">Histórico de preços</p>
-          <h2>Coletas registradas</h2>
-        </div>
-        <p className="historico-card__empty">
-          Ainda não há histórico de preços cadastrado para este medicamento nesta UF.
+      <div className="card historico-card historico-vazio">
+        <h3 className="card-titulo">Histórico de preços</h3>
+        <p className="historico-vazio-msg">
+          Ainda não há histórico de preços cadastrado para este medicamento nesta UF ({uf}).
         </p>
-      </section>
-    )
+      </div>
+    );
   }
 
   return (
-    <section className="historico-card">
-      <div className="historico-card__header">
-        <p className="eyebrow">Histórico de preços</p>
-        <h2>Coletas registradas em {uf}</h2>
-      </div>
-
+    <div className="card historico-card">
+      <h3 className="card-titulo">Histórico de preços — {uf}</h3>
       <div className="historico-table-wrapper">
         <table className="historico-table">
           <thead>
             <tr>
-              <th>Data de coleta</th>
+              <th>Farmácia</th>
               <th>Preço</th>
-              <th>PMC</th>
+              <th>UF</th>
+              <th>Data coleta</th>
               <th>Fonte</th>
-              <th>Tipo de fonte</th>
-              <th>Observação</th>
             </tr>
           </thead>
           <tbody>
-            {historico.map((item) => (
-              <tr key={item.id}>
-                <td>{formatDateTime(item.data_coleta)}</td>
-                <td>{formatCurrency(item.preco)}</td>
-                <td>{formatCurrency(item.pmc)}</td>
-                <td>{item.fonte}</td>
-                <td>{item.tipo_fonte}</td>
-                <td>{item.observacao ?? 'Sem observação'}</td>
+            {historico.map((h) => (
+              <tr key={h.id}>
+                <td>{h.farmacia}</td>
+                <td className="td-preco">
+                  {h.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </td>
+                <td>{h.uf}</td>
+                <td>{new Date(h.coletado_em).toLocaleDateString("pt-BR")}</td>
+                <td>{h.fonte || "—"}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </section>
-  )
-}
+    </div>
+  );
+};
+
+export default HistoricoPrecosTable;
