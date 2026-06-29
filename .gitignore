@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Dados locais
+dados/
+*.xlsx
+!backend/tests/fixtures/*.xlsx
