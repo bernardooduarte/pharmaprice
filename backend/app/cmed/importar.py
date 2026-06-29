@@ -6,10 +6,9 @@ import sys
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+from app.core.config import settings
 
 logging.basicConfig(level=logging.INFO)
-
-DATABASE_URL = "postgresql://pharmaprice:pharmaprice@localhost:5432/pharmaprice"
 
 def main():
     if len(sys.argv) < 2:
@@ -24,7 +23,7 @@ def main():
     medicamentos, data_pub = parsear_arquivo_local(caminho)
     print(f"Parsed: {len(medicamentos)} medicamentos (publicacao: {data_pub})")
 
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(settings.database_url, pool_pre_ping=True)
     with Session(engine) as session:
         stats = salvar_no_banco(
             session,
