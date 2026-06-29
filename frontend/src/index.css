@@ -257,10 +257,31 @@ img { max-width: 100%; display: block; }
   flex-direction: column;
   gap: .875rem;
 }
+.search-panel__heading {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  text-align: center;
+  margin: 0;
+}
 .search-panel__main {
   display: flex;
   gap: .75rem;
-  align-items: flex-start;
+  align-items: center;
+  padding-bottom: 1.3rem; /* space for absolutely-positioned hint text */
+}
+/* Label is replaced by search-panel__heading above the row */
+.search-panel .search-field__label { display: none; }
+/* Take hint text out of flow so button aligns flush with input */
+.search-panel .search-field { position: relative; }
+.search-panel .search-field__hint {
+  position: absolute;
+  top: calc(100% + .2rem);
+  left: 0;
+  right: 0;
+  min-height: 0;
 }
 .search-panel__main .search-field { flex: 1; }
 .search-panel__footer {
@@ -480,6 +501,10 @@ img { max-width: 100%; display: block; }
   color: var(--blue-600);
   transition: color .15s;
 }
+.resultados-toolbar__back::before {
+  content: '←';
+  font-size: .9rem;
+}
 .resultados-toolbar__back:hover { color: var(--blue-700); text-decoration: underline; }
 .resultados-toolbar code { display: none; }
 
@@ -642,6 +667,10 @@ img { max-width: 100%; display: block; }
   padding: 2rem 1.5rem 4rem;
   width: 100%;
 }
+
+/* Remove bottom margin from last card in each column */
+.detalhes-col-principal > :last-child,
+.detalhes-col-lateral > :last-child { margin-bottom: 0; }
 
 /* ── Breadcrumb ─────────────────────────────────────────────────────── */
 .breadcrumb {
@@ -902,8 +931,11 @@ img { max-width: 100%; display: block; }
   .info-section .info-grid { grid-template-columns: 1fr; }
   .resultados-grid { grid-template-columns: 1fr; }
   .hero-card { padding: 3rem 1.25rem 2.5rem; }
-  .search-panel__main { flex-direction: column; }
-  .search-panel__main .search-panel__button { width: 100%; }
+  .search-panel__main { flex-direction: column; align-items: stretch; padding-bottom: 0; }
+  .search-panel__button { width: 100%; }
+  /* Restore hint to flow on mobile (no alignment trick needed) */
+  .search-panel .search-field { position: static; }
+  .search-panel .search-field__hint { position: static; min-height: 1.1rem; }
   .info-section { padding: 2.5rem 1.25rem; }
   .info-label { flex: 0 0 130px; }
   .site-footer__inner { flex-direction: column; align-items: flex-start; gap: .75rem; }
