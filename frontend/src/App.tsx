@@ -39,8 +39,8 @@ const App: React.FC = () => {
             <a href="#">Sobre</a>
           </nav>
           <div className="site-header__uf" aria-label={`UF selecionada: ${uf}`}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" style={{ color: "var(--blue-600)" }}>
-              <path fillRule="evenodd" d="M8 1.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9ZM2 6a6 6 0 1 1 10.174 4.31c-.203.196-.381.404-.553.614a11.642 11.642 0 0 1-.449.5.75.75 0 1 1-1.118-1.002 10.147 10.147 0 0 0 .39-.436c.2-.247.415-.504.65-.744A6 6 0 0 1 2 6Z" clipRule="evenodd" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor">
+              <path fillRule="evenodd" d="M8 1a5 5 0 0 1 5 5c0 2.648-1.768 4.864-3.223 6.232A13.31 13.31 0 0 1 8 13.5a13.31 13.31 0 0 1-1.777-1.268C4.768 10.864 3 8.648 3 6a5 5 0 0 1 5-5Zm0 6.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" clipRule="evenodd" />
             </svg>
             UF: {uf}
           </div>
