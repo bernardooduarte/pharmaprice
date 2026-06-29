@@ -8,7 +8,7 @@ interface Medicamento {
   laboratorio?: string;
   tipo_produto?: string;
   classe_terapeutica?: string;
-  data_publicacao?: string;
+  data_publicacao_cmed?: string;
 }
 
 interface MedicamentoInfoCardProps {
@@ -38,9 +38,7 @@ const MedicamentoInfoCard: React.FC<MedicamentoInfoCardProps> = ({ medicamento, 
         {labelValor("UF selecionada", uf)}
         {labelValor(
           "Data de publicação CMED",
-          medicamento.data_publicacao
-            ? new Date(medicamento.data_publicacao).toLocaleDateString("pt-BR")
-            : undefined
+          medicamento.data_publicacao_cmed || undefined
         )}
       </div>
     </div>
