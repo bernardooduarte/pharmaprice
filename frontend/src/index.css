@@ -90,3 +90,759 @@ code {
     padding: 1rem;
   }
 }
+/* ============================================================
+   PharmaPrice — Detalhes do medicamento
+   Adicionar ao final de src/index.css ou src/App.css
+   ============================================================ */
+
+/* ── Container principal ─────────────────────────────────── */
+.detalhes-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  color: #1a1a2e;
+}
+
+/* ── Breadcrumb ──────────────────────────────────────────── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+  color: #6b7280;
+}
+.breadcrumb-link,
+.breadcrumb-btn {
+  color: #1d6fa8;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.breadcrumb-link:hover,
+.breadcrumb-btn:hover { text-decoration: underline; }
+.breadcrumb-sep { color: #9ca3af; }
+.breadcrumb-atual { color: #374151; font-weight: 500; }
+
+/* ── Grid de layout ──────────────────────────────────────── */
+.detalhes-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 800px) {
+  .detalhes-grid {
+    grid-template-columns: 1fr;
+  }
+  .detalhes-col-lateral { order: -1; }
+}
+
+/* ── Card base ───────────────────────────────────────────── */
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  margin-bottom: 1.25rem;
+}
+.card-titulo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+/* ── Info card ───────────────────────────────────────────── */
+.info-card .card-titulo {
+  font-size: 1.3rem;
+  color: #1d6fa8;
+  border-color: #dbeafe;
+}
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.info-row {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.info-label {
+  flex: 0 0 180px;
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding-top: 0.1rem;
+}
+.info-valor {
+  flex: 1;
+  color: #1f2937;
+}
+.nao-disponivel {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 0.88rem;
+}
+
+/* ── PMC card ────────────────────────────────────────────── */
+.pmc-card {
+  background: linear-gradient(135deg, #1d6fa8 0%, #1e40af 100%);
+  border: none;
+  color: #ffffff;
+  position: sticky;
+  top: 1.5rem;
+}
+.pmc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.pmc-badge {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+.pmc-uf {
+  font-size: 0.82rem;
+  opacity: 0.8;
+}
+.pmc-valor-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+.pmc-valor {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.pmc-descricao {
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+.pmc-indisponivel {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  font-style: italic;
+  margin: 0.5rem 0 0;
+}
+.pmc-indisponivel-card {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+.pmc-indisponivel-card .pmc-badge {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+/* Comparações de preços dentro do PMC card */
+.pmc-comparacoes { margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1rem; }
+.pmc-comparacoes-titulo { font-size: 0.82rem; font-weight: 600; opacity: 0.8; margin: 0 0 0.6rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.pmc-comparacao-row { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.75rem; font-size: 0.88rem; }
+.pmc-farmacia { font-weight: 600; }
+.pmc-preco-coletado { font-size: 1.05rem; font-weight: 700; }
+.pmc-diff { font-size: 0.78rem; opacity: 0.85; }
+.diff-ok { color: #a7f3d0; }
+.diff-alerta { color: #fca5a5; }
+
+/* ── Histórico de preços ─────────────────────────────────── */
+.historico-card .card-titulo { color: #374151; }
+.historico-vazio-msg {
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0.5rem 0 0;
+  line-height: 1.6;
+}
+.historico-table-wrapper { overflow-x: auto; }
+.historico-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.historico-table th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.historico-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  vertical-align: middle;
+}
+.historico-table tbody tr:last-child td { border-bottom: none; }
+.historico-table tbody tr:hover { background: #f9fafb; }
+.td-preco { font-weight: 700; color: #1d6fa8; }
+
+/* ── Loading / Erro ──────────────────────────────────────── */
+.detalhes-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #1d6fa8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.detalhes-erro {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: #dc2626;
+  font-size: 0.9rem;
+}
+.btn-voltar {
+  align-self: flex-start;
+  background: #1d6fa8;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-voltar:hover { background: #1557a0; }
+/* ============================================================
+   PharmaPrice — Detalhes do medicamento
+   Adicionar ao final de src/index.css ou src/App.css
+   ============================================================ */
+
+/* ── Container principal ─────────────────────────────────── */
+.detalhes-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  color: #1a1a2e;
+}
+
+/* ── Breadcrumb ──────────────────────────────────────────── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+  color: #6b7280;
+}
+.breadcrumb-link,
+.breadcrumb-btn {
+  color: #1d6fa8;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.breadcrumb-link:hover,
+.breadcrumb-btn:hover { text-decoration: underline; }
+.breadcrumb-sep { color: #9ca3af; }
+.breadcrumb-atual { color: #374151; font-weight: 500; }
+
+/* ── Grid de layout ──────────────────────────────────────── */
+.detalhes-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 800px) {
+  .detalhes-grid {
+    grid-template-columns: 1fr;
+  }
+  .detalhes-col-lateral { order: -1; }
+}
+
+/* ── Card base ───────────────────────────────────────────── */
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  margin-bottom: 1.25rem;
+}
+.card-titulo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+/* ── Info card ───────────────────────────────────────────── */
+.info-card .card-titulo {
+  font-size: 1.3rem;
+  color: #1d6fa8;
+  border-color: #dbeafe;
+}
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.info-row {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.info-label {
+  flex: 0 0 180px;
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding-top: 0.1rem;
+}
+.info-valor {
+  flex: 1;
+  color: #1f2937;
+}
+.nao-disponivel {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 0.88rem;
+}
+
+/* ── PMC card ────────────────────────────────────────────── */
+.pmc-card {
+  background: linear-gradient(135deg, #1d6fa8 0%, #1e40af 100%);
+  border: none;
+  color: #ffffff;
+  position: sticky;
+  top: 1.5rem;
+}
+.pmc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.pmc-badge {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+.pmc-uf {
+  font-size: 0.82rem;
+  opacity: 0.8;
+}
+.pmc-valor-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+.pmc-valor {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.pmc-descricao {
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+.pmc-indisponivel {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  font-style: italic;
+  margin: 0.5rem 0 0;
+}
+.pmc-indisponivel-card {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+.pmc-indisponivel-card .pmc-badge {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+/* Comparações de preços dentro do PMC card */
+.pmc-comparacoes { margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1rem; }
+.pmc-comparacoes-titulo { font-size: 0.82rem; font-weight: 600; opacity: 0.8; margin: 0 0 0.6rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.pmc-comparacao-row { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.75rem; font-size: 0.88rem; }
+.pmc-farmacia { font-weight: 600; }
+.pmc-preco-coletado { font-size: 1.05rem; font-weight: 700; }
+.pmc-diff { font-size: 0.78rem; opacity: 0.85; }
+.diff-ok { color: #a7f3d0; }
+.diff-alerta { color: #fca5a5; }
+
+/* ── Histórico de preços ─────────────────────────────────── */
+.historico-card .card-titulo { color: #374151; }
+.historico-vazio-msg {
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0.5rem 0 0;
+  line-height: 1.6;
+}
+.historico-table-wrapper { overflow-x: auto; }
+.historico-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.historico-table th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.historico-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  vertical-align: middle;
+}
+.historico-table tbody tr:last-child td { border-bottom: none; }
+.historico-table tbody tr:hover { background: #f9fafb; }
+.td-preco { font-weight: 700; color: #1d6fa8; }
+
+/* ── Loading / Erro ──────────────────────────────────────── */
+.detalhes-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #1d6fa8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.detalhes-erro {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: #dc2626;
+  font-size: 0.9rem;
+}
+.btn-voltar {
+  align-self: flex-start;
+  background: #1d6fa8;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-voltar:hover { background: #1557a0; }
+/* ============================================================
+   PharmaPrice — Detalhes do medicamento
+   Adicionar ao final de src/index.css ou src/App.css
+   ============================================================ */
+
+/* ── Container principal ─────────────────────────────────── */
+.detalhes-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  color: #1a1a2e;
+}
+
+/* ── Breadcrumb ──────────────────────────────────────────── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+  color: #6b7280;
+}
+.breadcrumb-link,
+.breadcrumb-btn {
+  color: #1d6fa8;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.breadcrumb-link:hover,
+.breadcrumb-btn:hover { text-decoration: underline; }
+.breadcrumb-sep { color: #9ca3af; }
+.breadcrumb-atual { color: #374151; font-weight: 500; }
+
+/* ── Grid de layout ──────────────────────────────────────── */
+.detalhes-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 800px) {
+  .detalhes-grid {
+    grid-template-columns: 1fr;
+  }
+  .detalhes-col-lateral { order: -1; }
+}
+
+/* ── Card base ───────────────────────────────────────────── */
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  margin-bottom: 1.25rem;
+}
+.card-titulo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+/* ── Info card ───────────────────────────────────────────── */
+.info-card .card-titulo {
+  font-size: 1.3rem;
+  color: #1d6fa8;
+  border-color: #dbeafe;
+}
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.info-row {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.info-label {
+  flex: 0 0 180px;
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding-top: 0.1rem;
+}
+.info-valor {
+  flex: 1;
+  color: #1f2937;
+}
+.nao-disponivel {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 0.88rem;
+}
+
+/* ── PMC card ────────────────────────────────────────────── */
+.pmc-card {
+  background: linear-gradient(135deg, #1d6fa8 0%, #1e40af 100%);
+  border: none;
+  color: #ffffff;
+  position: sticky;
+  top: 1.5rem;
+}
+.pmc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.pmc-badge {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+.pmc-uf {
+  font-size: 0.82rem;
+  opacity: 0.8;
+}
+.pmc-valor-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+.pmc-valor {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.pmc-descricao {
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+.pmc-indisponivel {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  font-style: italic;
+  margin: 0.5rem 0 0;
+}
+.pmc-indisponivel-card {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+.pmc-indisponivel-card .pmc-badge {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+/* Comparações de preços dentro do PMC card */
+.pmc-comparacoes { margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1rem; }
+.pmc-comparacoes-titulo { font-size: 0.82rem; font-weight: 600; opacity: 0.8; margin: 0 0 0.6rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.pmc-comparacao-row { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.75rem; font-size: 0.88rem; }
+.pmc-farmacia { font-weight: 600; }
+.pmc-preco-coletado { font-size: 1.05rem; font-weight: 700; }
+.pmc-diff { font-size: 0.78rem; opacity: 0.85; }
+.diff-ok { color: #a7f3d0; }
+.diff-alerta { color: #fca5a5; }
+
+/* ── Histórico de preços ─────────────────────────────────── */
+.historico-card .card-titulo { color: #374151; }
+.historico-vazio-msg {
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0.5rem 0 0;
+  line-height: 1.6;
+}
+.historico-table-wrapper { overflow-x: auto; }
+.historico-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.historico-table th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.historico-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  vertical-align: middle;
+}
+.historico-table tbody tr:last-child td { border-bottom: none; }
+.historico-table tbody tr:hover { background: #f9fafb; }
+.td-preco { font-weight: 700; color: #1d6fa8; }
+
+/* ── Loading / Erro ──────────────────────────────────────── */
+.detalhes-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #1d6fa8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.detalhes-erro {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: #dc2626;
+  font-size: 0.9rem;
+}
+.btn-voltar {
+  align-self: flex-start;
+  background: #1d6fa8;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-voltar:hover { background: #1557a0; }

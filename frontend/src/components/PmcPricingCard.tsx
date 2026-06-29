@@ -1,72 +1,76 @@
-import type { ComparacaoPrecos } from '../services/api'
+import React from "react";
 
-type PmcPricingCardProps = {
-  comparacao: ComparacaoPrecos
+interface ComparacaoPrecos {
+  medicamento_id: number;
+  produto: string;
+  uf: string;
+  pmc: number | null;
+  precos_encontrados: {
+    farmacia: string;
+    preco: number;
+    diferenca_pmc: number | null;
+    percentual_pmc: number | null;
+    coletado_em: string;
+  }[];
 }
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value)
+interface PmcPricingCardProps {
+  comparacao: ComparacaoPrecos;
 }
 
-function formatPercent(value: number) {
-  return new Intl.NumberFormat('pt-BR', {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 0,
-  }).format(value)
-}
-
-export function PmcPricingCard({ comparacao }: PmcPricingCardProps) {
-  const ultimoPreco = comparacao.precos_encontrados[0] ?? null
+const PmcPricingCard: React.FC<PmcPricingCardProps> = ({ comparacao }) => {
+  const { pmc, uf, precos_encontrados } = comparacao;
 
   return (
-    <aside className="pmc-pricing-card">
-      <p className="eyebrow">Teto regulatório</p>
-      <h2>PMC em {comparacao.uf}</h2>
+    <div className="card pmc-card">
+      <div className="pmc-header">
+        <span className="pmc-badge">CMED / PMC</span>
+        <span className="pmc-uf">UF: {uf}</span>
+      </div>
 
-      {comparacao.pmc === null ? (
-        <p className="pmc-pricing-card__empty">
+      {pmc !== null ? (
+        <div className="pmc-valor-wrapper">
+          <span className="pmc-valor">
+            {pmc.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+          </span>
+          <span className="pmc-descricao">Teto máximo ao consumidor</span>
+        </div>
+      ) : (
+        <p className="pmc-indisponivel">
           PMC não disponível para a UF selecionada.
         </p>
-      ) : (
-        <div className="pmc-pricing-card__value-group">
-          <strong>{formatCurrency(comparacao.pmc)}</strong>
-          <p>Preço máximo ao consumidor para a UF selecionada.</p>
-        </div>
       )}
 
-      {ultimoPreco ? (
-        <div
-          className={`pmc-pricing-card__status ${
-            ultimoPreco.acima_pmc ? 'is-warning' : 'is-ok'
-          }`}
-        >
-          <h3>
-            {ultimoPreco.acima_pmc
-              ? 'Preço praticado acima do PMC'
-              : 'Preço praticado dentro do PMC'}
-          </h3>
-          <p>
-            Último preço registrado: {formatCurrency(ultimoPreco.preco)}
-          </p>
-          {ultimoPreco.diferenca_valor !== null ? (
-            <p>
-              Diferença: {formatCurrency(ultimoPreco.diferenca_valor)} (
-              {ultimoPreco.diferenca_percentual !== null
-                ? `${formatPercent(ultimoPreco.diferenca_percentual)}%`
-                : 'sem percentual'}
-              )
-            </p>
-          ) : null}
-        </div>
-      ) : (
-        <div className="pmc-pricing-card__status is-muted">
-          <h3>Sem comparação cadastrada</h3>
-          <p>Ainda não há preços praticados para comparar com o PMC nesta UF.</p>
+      {precos_encontrados.length > 0 && (
+        <div className="pmc-comparacoes">
+          <h4 className="pmc-comparacoes-titulo">Preços coletados</h4>
+          {precos_encontrados.map((p, i) => {
+            const abaixo = p.diferenca_pmc !== null && p.diferenca_pmc < 0;
+            const acima = p.diferenca_pmc !== null && p.diferenca_pmc > 0;
+            return (
+              <div key={i} className="pmc-comparacao-row">
+                <span className="pmc-farmacia">{p.farmacia}</span>
+                <span className="pmc-preco-coletado">
+                  {p.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </span>
+                {p.diferenca_pmc !== null && (
+                  <span className={`pmc-diff ${abaixo ? "diff-ok" : acima ? "diff-alerta" : ""}`}>
+                    {abaixo ? "▼" : "▲"}{" "}
+                    {Math.abs(p.diferenca_pmc).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                    {p.percentual_pmc !== null &&
+                      ` (${Math.abs(p.percentual_pmc).toFixed(1)}% ${abaixo ? "abaixo" : "acima"} do PMC)`}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
-    </aside>
-  )
-}
+    </div>
+  );
+};
+
+export default PmcPricingCard;

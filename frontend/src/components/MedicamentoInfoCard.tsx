@@ -1,89 +1,50 @@
-import type { MedicamentoDetalhe } from '../services/api'
+import React from "react";
 
-type MedicamentoInfoCardProps = {
-  medicamento: MedicamentoDetalhe
-  uf: string
-  pmc: number | null
+interface Medicamento {
+  id: number;
+  produto: string;
+  substancia: string;
+  apresentacao: string;
+  laboratorio?: string;
+  tipo_produto?: string;
+  classe_terapeutica?: string;
+  data_publicacao?: string;
 }
 
-function formatCurrency(value: number | null) {
-  if (value === null) {
-    return 'Não disponível'
-  }
-
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value)
+interface MedicamentoInfoCardProps {
+  medicamento: Medicamento;
+  uf: string;
 }
 
-export function MedicamentoInfoCard({
-  medicamento,
-  uf,
-  pmc,
-}: MedicamentoInfoCardProps) {
+function labelValor(label: string, valor: string | undefined) {
   return (
-    <section className="medicamento-info-card">
-      <div className="medicamento-info-card__header">
-        <div className="medicamento-info-card__badges">
-          <span className="resultado-card__tag">
-            {medicamento.tipo_produto ?? 'Medicamento'}
-          </span>
-          <span className="resultado-card__uf">UF {uf}</span>
-        </div>
-        <h1>{medicamento.produto}</h1>
-        <p className="medicamento-info-card__subtitle">{medicamento.substancia}</p>
-      </div>
-
-      <div className="medicamento-info-card__summary">
-        <div>
-          <span className="medicamento-info-card__label">Apresentação</span>
-          <strong>{medicamento.apresentacao}</strong>
-        </div>
-        <div>
-          <span className="medicamento-info-card__label">Laboratório</span>
-          <strong>{medicamento.laboratorio ?? 'Não informado'}</strong>
-        </div>
-        <div>
-          <span className="medicamento-info-card__label">PMC</span>
-          <strong>{formatCurrency(pmc)}</strong>
-        </div>
-      </div>
-
-      <dl className="medicamento-info-card__details">
-        <div>
-          <dt>Classe terapêutica</dt>
-          <dd>{medicamento.classe_terapeutica ?? 'Não informada'}</dd>
-        </div>
-        <div>
-          <dt>Regime de preço</dt>
-          <dd>{medicamento.regime_preco ?? 'Não informado'}</dd>
-        </div>
-        <div>
-          <dt>Tarja</dt>
-          <dd>{medicamento.tarja ?? 'Não informada'}</dd>
-        </div>
-        <div>
-          <dt>Registro</dt>
-          <dd>{medicamento.registro ?? 'Não informado'}</dd>
-        </div>
-        <div>
-          <dt>Código GGREM</dt>
-          <dd>{medicamento.codigo_ggrem}</dd>
-        </div>
-        <div>
-          <dt>EAN</dt>
-          <dd>{medicamento.ean1 ?? 'Não informado'}</dd>
-        </div>
-        <div>
-          <dt>Publicação CMED</dt>
-          <dd>{medicamento.data_publicacao_cmed ?? 'Não informada'}</dd>
-        </div>
-        <div>
-          <dt>Fonte oficial</dt>
-          <dd>{medicamento.fonte_url ?? 'Não informada'}</dd>
-        </div>
-      </dl>
-    </section>
-  )
+    <div className="info-row">
+      <span className="info-label">{label}</span>
+      <span className="info-valor">{valor || <em className="nao-disponivel">Não informado</em>}</span>
+    </div>
+  );
 }
+
+const MedicamentoInfoCard: React.FC<MedicamentoInfoCardProps> = ({ medicamento, uf }) => {
+  return (
+    <div className="card info-card">
+      <h2 className="card-titulo">{medicamento.produto}</h2>
+      <div className="info-grid">
+        {labelValor("Substância", medicamento.substancia)}
+        {labelValor("Apresentação", medicamento.apresentacao)}
+        {labelValor("Laboratório", medicamento.laboratorio)}
+        {labelValor("Tipo de produto", medicamento.tipo_produto)}
+        {labelValor("Classe terapêutica", medicamento.classe_terapeutica)}
+        {labelValor("UF selecionada", uf)}
+        {labelValor(
+          "Data de publicação CMED",
+          medicamento.data_publicacao
+            ? new Date(medicamento.data_publicacao).toLocaleDateString("pt-BR")
+            : undefined
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default MedicamentoInfoCard;
