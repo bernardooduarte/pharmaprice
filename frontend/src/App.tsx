@@ -2,11 +2,13 @@ import React from "react";
 import { HomePage } from "./pages/HomePage";
 import { ResultadosPage } from "./pages/ResultadosPage";
 import DetalhesPage from "./pages/DetalhesPage";
+import { HistoricoPage } from "./pages/HistoricoPage";
 
-function getPage(): "home" | "resultados" | "detalhes" {
+function getPage(): "home" | "resultados" | "detalhes" | "historico" {
   const path = window.location.pathname;
   if (path.startsWith("/medicamentos/")) return "detalhes";
   if (path.startsWith("/resultados")) return "resultados";
+  if (path.startsWith("/historico")) return "historico";
   return "home";
 }
 
@@ -15,7 +17,7 @@ function getUf(): string {
 }
 
 const App: React.FC = () => {
-  const [page, setPage] = React.useState<"home" | "resultados" | "detalhes">(getPage);
+  const [page, setPage] = React.useState<"home" | "resultados" | "detalhes" | "historico">(getPage);
   const [uf, setUf] = React.useState<string>(getUf);
 
   React.useEffect(() => {
@@ -34,7 +36,7 @@ const App: React.FC = () => {
           <a href="/" className="site-header__logo">PharmaPrice</a>
           <nav className="site-header__nav" aria-label="Navegação principal">
             <a href="/" className={page === "home" ? "is-active" : ""}>Início</a>
-            <a href="#">Histórico</a>
+            <a href="/historico" className={page === "historico" ? "is-active" : ""}>Histórico</a>
             <a href="#">Como Funciona</a>
             <a href="#">Sobre</a>
           </nav>
@@ -47,9 +49,10 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {page === "detalhes"   && <DetalhesPage />}
+      {page === "detalhes" && <DetalhesPage />}
       {page === "resultados" && <ResultadosPage route={window.location.href} />}
-      {page === "home"       && <HomePage onNavigate={() => { setPage(getPage()); setUf(getUf()); }} />}
+      {page === "historico" && <HistoricoPage />}
+      {page === "home" && <HomePage onNavigate={() => { setPage(getPage()); setUf(getUf()); }} />}
 
       <footer className="site-footer">
         <div className="site-footer__inner">

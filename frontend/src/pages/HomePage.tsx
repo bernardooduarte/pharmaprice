@@ -5,6 +5,7 @@ import { InfoCards } from '../components/InfoCards'
 import { SearchBar } from '../components/SearchBar'
 import { UfSelector } from '../components/UfSelector'
 import { buildResultadosUrl } from '../services/api'
+import { registrarBusca } from '../services/historico'
 
 type HomePageProps = {
   onNavigate?: () => void
@@ -25,6 +26,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
     }
 
     setError(undefined)
+    registrarBusca(normalized, uf)
     const url = buildResultadosUrl({ q: normalized, uf })
     window.history.pushState({}, '', url)
     window.dispatchEvent(new PopStateEvent('popstate'))

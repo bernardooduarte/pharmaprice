@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import MedicamentoInfoCard from "../components/MedicamentoInfoCard";
 import PmcPricingCard from "../components/PmcPricingCard";
 import HistoricoPrecosTable from "../components/HistoricoPrecosTable";
+import { registrarVisita } from "../services/historico";
 
 const API_BASE = "http://127.0.0.1:8000";
 
@@ -86,6 +87,13 @@ const DetalhesPage: React.FC = () => {
         setMedicamento(dataMed);
         setHistorico(Array.isArray(dataHist) ? dataHist : []);
         setComparacao(dataComp);
+
+        registrarVisita({
+          medicamentoId: dataMed.id,
+          produto: dataMed.produto,
+          substancia: dataMed.substancia,
+          uf,
+        });
       } catch (e: unknown) {
         setErro(e instanceof Error ? e.message : "Erro ao carregar dados.");
       } finally {
