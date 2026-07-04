@@ -1,111 +1,99 @@
-import React, { useEffect, useState } from "react";
-import MedicamentoInfoCard from "../components/MedicamentoInfoCard";
-import PmcPricingCard from "../components/PmcPricingCard";
-import HistoricoPrecosTable from "../components/HistoricoPrecosTable";
-import { registrarVisita } from "../services/historico";
+import { useEffect, useState } from 'react'
 
-const API_BASE = "http://127.0.0.1:8000";
+import HistoricoPrecosTable from '../components/HistoricoPrecosTable'
+import MedicamentoInfoCard from '../components/MedicamentoInfoCard'
+import PmcPricingCard from '../components/PmcPricingCard'
+import { EquivalentesSection } from '../components/EquivalentesSection'
+import { GraficoHistoricoPrecos } from '../components/GraficoHistoricoPrecos'
+import {
+  buscarComparacaoPrecos,
+  buscarEquivalentes,
+  buscarHistoricoPrecos,
+  buscarMedicamentoDetalhe,
+  type ComparacaoPrecos,
+  type HistoricoPreco,
+  type MedicamentoDetalhe,
+  type MedicamentoResultado,
+} from '../services/api'
+import { registrarVisita } from '../services/historico'
 
-interface Medicamento {
-  id: number;
-  produto: string;
-  substancia: string;
-  apresentacao: string;
-  laboratorio?: string;
-  tipo_produto?: string;
-  classe_terapeutica?: string;
-  data_publicacao?: string;
-}
-
-interface HistoricoPreco {
-  id: number;
-  farmacia: string;
-  preco: number;
-  uf: string;
-  coletado_em: string;
-  fonte?: string;
-}
-
-interface ComparacaoPrecos {
-  medicamento_id: number;
-  produto: string;
-  uf: string;
-  pmc: number | null;
-  precos_encontrados: {
-    farmacia: string;
-    preco: number;
-    diferenca_pmc: number | null;
-    percentual_pmc: number | null;
-    coletado_em: string;
-  }[];
-}
-
-// Extrair id e uf da URL sem depender de react-router
 function parseUrl(): { id: string | null; uf: string } {
-  const path = window.location.pathname; // /medicamentos/123
-  const search = new URLSearchParams(window.location.search);
-  const partes = path.split("/");
-  const id = partes[partes.length - 1] || null;
-  const uf = search.get("uf") || "MG";
-  return { id, uf };
+  const path = window.location.pathname
+  const search = new URLSearchParams(window.location.search)
+  const partes = path.split('/')
+  const id = partes[partes.length - 1] || null
+  const uf = search.get('uf')?.toUpperCase() || 'MG'
+  return { id, uf }
 }
 
-const DetalhesPage: React.FC = () => {
-  const { id, uf } = parseUrl();
+export default function DetalhesPage() {
+  const { id, uf } = parseUrl()
 
-  const [medicamento, setMedicamento] = useState<Medicamento | null>(null);
-  const [historico, setHistorico] = useState<HistoricoPreco[]>([]);
-  const [comparacao, setComparacao] = useState<ComparacaoPrecos | null>(null);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
+  const [medicamento, setMedicamento] = useState<MedicamentoDetalhe | null>(null)
+  const [historico, setHistorico] = useState<HistoricoPreco[]>([])
+  const [comparacao, setComparacao] = useState<ComparacaoPrecos | null>(null)
+  const [equivalentes, setEquivalentes] = useState<MedicamentoResultado[]>([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) {
-      setErro("ID do medicamento não encontrado na URL.");
-      setCarregando(false);
-      return;
+      setErro('ID do medicamento não encontrado na URL.')
+      setCarregando(false)
+      return
     }
 
+    let ativo = true
+
     async function carregarDados() {
-      setCarregando(true);
-      setErro(null);
+      setCarregando(true)
+      setErro(null)
+
       try {
-        const [resMed, resHist, resComp] = await Promise.all([
-          fetch(`${API_BASE}/medicamentos/${id}`),
-          fetch(`${API_BASE}/medicamentos/${id}/historico-precos?uf=${uf}`),
-          fetch(`${API_BASE}/medicamentos/${id}/comparacao-precos?uf=${uf}`),
-        ]);
+        const [dataMed, dataHist, dataComp, dataEq] = await Promise.all([
+          buscarMedicamentoDetalhe(id, uf),
+          buscarHistoricoPrecos(id, uf),
+          buscarComparacaoPrecos(id, uf),
+          buscarEquivalentes(id, uf),
+        ])
 
-        if (!resMed.ok) throw new Error(`Medicamento não encontrado (HTTP ${resMed.status})`);
+        if (!ativo) {
+          return
+        }
 
-        const [dataMed, dataHist, dataComp] = await Promise.all([
-          resMed.json(),
-          resHist.ok ? resHist.json() : [],
-          resComp.ok ? resComp.json() : null,
-        ]);
-
-        setMedicamento(dataMed);
-        setHistorico(Array.isArray(dataHist) ? dataHist : []);
-        setComparacao(dataComp);
+        setMedicamento(dataMed)
+        setHistorico(dataHist)
+        setComparacao(dataComp)
+        setEquivalentes(dataEq)
 
         registrarVisita({
           medicamentoId: dataMed.id,
           produto: dataMed.produto,
           substancia: dataMed.substancia,
           uf,
-        });
-      } catch (e: unknown) {
-        setErro(e instanceof Error ? e.message : "Erro ao carregar dados.");
+        })
+      } catch (carregarErro: unknown) {
+        if (!ativo) {
+          return
+        }
+
+        setErro(carregarErro instanceof Error ? carregarErro.message : 'Erro ao carregar dados.')
       } finally {
-        setCarregando(false);
+        if (ativo) {
+          setCarregando(false)
+        }
       }
     }
 
-    carregarDados();
-  }, [id, uf]);
+    void carregarDados()
+
+    return () => {
+      ativo = false
+    }
+  }, [id, uf])
 
   function voltarResultados() {
-    window.history.back();
+    window.history.back()
   }
 
   if (carregando) {
@@ -116,7 +104,7 @@ const DetalhesPage: React.FC = () => {
           <p>Carregando dados do medicamento…</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (erro) {
@@ -129,14 +117,15 @@ const DetalhesPage: React.FC = () => {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
-  if (!medicamento) return null;
+  if (!medicamento) {
+    return null
+  }
 
   return (
     <div className="detalhes-container">
-      {/* Breadcrumb */}
       <nav className="breadcrumb">
         <a href="/" className="breadcrumb-link">Início</a>
         <span className="breadcrumb-sep">›</span>
@@ -147,15 +136,14 @@ const DetalhesPage: React.FC = () => {
         <span className="breadcrumb-atual">{medicamento.produto}</span>
       </nav>
 
-      {/* Layout principal */}
       <div className="detalhes-grid">
-        {/* Coluna esquerda — info principal */}
         <div className="detalhes-col-principal">
           <MedicamentoInfoCard medicamento={medicamento} uf={uf} />
+          <GraficoHistoricoPrecos historico={historico} pmc={comparacao?.pmc ?? null} />
           <HistoricoPrecosTable historico={historico} uf={uf} />
+          <EquivalentesSection equivalentes={equivalentes} uf={uf} />
         </div>
 
-        {/* Coluna direita — PMC */}
         <div className="detalhes-col-lateral">
           {comparacao ? (
             <PmcPricingCard comparacao={comparacao} />
@@ -168,7 +156,5 @@ const DetalhesPage: React.FC = () => {
         </div>
       </div>
     </div>
-  );
-};
-
-export default DetalhesPage;
+  )
+}

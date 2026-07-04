@@ -5,7 +5,7 @@ Uso:
 python -m app.scripts.seed_historico_precos
 """
 from datetime import UTC, datetime, timedelta
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy import or_
 
@@ -73,6 +73,114 @@ SEMENTES = [
             },
         ],
     },
+    {
+        "termo": "ATORVASTATINA",
+        "uf": "MG",
+        "registros": [
+            {
+                "multiplicador": Decimal("0.85"),
+                "fonte": "Drogaria Jardim",
+                "tipo_fonte": "farmacia",
+                "dias_atras": 15,
+                "observacao": "Preco abaixo do PMC para demonstracao.",
+            },
+            {
+                "multiplicador": Decimal("0.98"),
+                "fonte": "Farma Cidade",
+                "tipo_fonte": "e-commerce",
+                "dias_atras": 8,
+                "observacao": "Preco proximo ao PMC vigente.",
+            },
+            {
+                "multiplicador": Decimal("1.08"),
+                "fonte": "Drogaria Central",
+                "tipo_fonte": "farmacia",
+                "dias_atras": 2,
+                "observacao": "Preco acima do PMC para comparacao.",
+            },
+        ],
+    },
+    {
+        "termo": "METFORMINA",
+        "uf": "SP",
+        "registros": [
+            {
+                "multiplicador": Decimal("0.85"),
+                "fonte": "Rede Bem Estar",
+                "tipo_fonte": "farmacia",
+                "dias_atras": 15,
+                "observacao": "Preco abaixo do PMC para demonstracao.",
+            },
+            {
+                "multiplicador": Decimal("0.98"),
+                "fonte": "Farma Popular SP",
+                "tipo_fonte": "app",
+                "dias_atras": 8,
+                "observacao": "Preco proximo ao PMC vigente.",
+            },
+            {
+                "multiplicador": Decimal("1.08"),
+                "fonte": "Drogaria Paulista",
+                "tipo_fonte": "farmacia",
+                "dias_atras": 2,
+                "observacao": "Preco acima do PMC para comparacao.",
+            },
+        ],
+    },
+    {
+        "termo": "OMEPRAZOL",
+        "uf": "MG",
+        "registros": [
+            {
+                "multiplicador": Decimal("0.85"),
+                "fonte": "Farma Centro Sul",
+                "tipo_fonte": "farmacia",
+                "dias_atras": 15,
+                "observacao": "Preco abaixo do PMC para demonstracao.",
+            },
+            {
+                "multiplicador": Decimal("0.98"),
+                "fonte": "App Saude MG",
+                "tipo_fonte": "e-commerce",
+                "dias_atras": 8,
+                "observacao": "Preco proximo ao PMC vigente.",
+            },
+            {
+                "multiplicador": Decimal("1.08"),
+                "fonte": "Drogaria Horizonte",
+                "tipo_fonte": "farmacia",
+                "dias_atras": 2,
+                "observacao": "Preco acima do PMC para comparacao.",
+            },
+        ],
+    },
+    {
+        "termo": "AMOXICILINA",
+        "uf": "RJ",
+        "registros": [
+            {
+                "multiplicador": Decimal("0.85"),
+                "fonte": "Drogaria Carioca",
+                "tipo_fonte": "farmacia",
+                "dias_atras": 15,
+                "observacao": "Preco abaixo do PMC para demonstracao.",
+            },
+            {
+                "multiplicador": Decimal("0.98"),
+                "fonte": "Farma Online RJ",
+                "tipo_fonte": "e-commerce",
+                "dias_atras": 8,
+                "observacao": "Preco proximo ao PMC vigente.",
+            },
+            {
+                "multiplicador": Decimal("1.08"),
+                "fonte": "Farmacia da Praia",
+                "tipo_fonte": "farmacia",
+                "dias_atras": 2,
+                "observacao": "Preco acima do PMC para comparacao.",
+            },
+        ],
+    },
 ]
 
 PMC_POR_UF = {
@@ -96,6 +204,10 @@ def buscar_medicamento_por_termo(db, termo: str) -> Medicamento | None:
     )
 
 
+def calcular_preco(pmc: Decimal, multiplicador: Decimal) -> Decimal:
+    return (pmc * multiplicador).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
 def main() -> None:
     db = SessionLocal()
     inseridos = 0
@@ -110,10 +222,28 @@ def main() -> None:
             campo_pmc = PMC_POR_UF.get(semente["uf"], "pmc_18")
             pmc = getattr(medicamento, campo_pmc)
 
+            if pmc is None:
+                print(
+                    f"PMC ausente para {medicamento.produto}/{semente['uf']}, pulando seed."
+                )
+                continue
+
+            ja_existe = (
+                db.query(HistoricoPreco)
+                .filter(
+                    HistoricoPreco.medicamento_id == medicamento.id,
+                    HistoricoPreco.uf == semente["uf"],
+                )
+                .first()
+            )
+            if ja_existe:
+                print(f"Seed ja existe para {medicamento.produto}/{semente['uf']}, pulando.")
+                continue
+
             for registro in semente["registros"]:
                 historico = HistoricoPreco(
                     medicamento_id=medicamento.id,
-                    preco=registro["preco"],
+                    preco=calcular_preco(Decimal(pmc), registro["multiplicador"]),
                     pmc=pmc,
                     uf=semente["uf"],
                     fonte=registro["fonte"],

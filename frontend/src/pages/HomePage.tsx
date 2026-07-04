@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { InfoCards } from '../components/InfoCards'
 import { SearchBar } from '../components/SearchBar'
 import { UfSelector } from '../components/UfSelector'
 import { buildResultadosUrl } from '../services/api'
-import { registrarBusca } from '../services/historico'
+import { getBuscas, limparBuscas, registrarBusca } from '../services/historico'
+import { getConfiguracoes } from '../services/configuracoes'
 
 type HomePageProps = {
   onNavigate?: () => void
@@ -13,8 +14,34 @@ type HomePageProps = {
 
 export function HomePage({ onNavigate }: HomePageProps) {
   const [query, setQuery] = useState('')
-  const [uf, setUf] = useState('MG')
+  const [uf, setUf] = useState(() => getConfiguracoes().uf)
   const [error, setError] = useState<string>()
+  const [buscasRecentes, setBuscasRecentes] = useState(() => getBuscas())
+  const farmaciasMonitoradas = [
+    'Drogasil',
+    'Araújo',
+    'Pacheco',
+    'São Paulo',
+    'Ultrafarma',
+    'Raia',
+    'Indiana',
+  ]
+
+  useEffect(() => {
+    function carregarBuscas() {
+      setBuscasRecentes(getBuscas())
+    }
+
+    carregarBuscas()
+    window.addEventListener('pharmaprice:historico-changed', carregarBuscas)
+    return () => window.removeEventListener('pharmaprice:historico-changed', carregarBuscas)
+  }, [])
+
+  function navegarPara(url: string) {
+    window.history.pushState({}, '', url)
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    onNavigate?.()
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -27,10 +54,17 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
     setError(undefined)
     registrarBusca(normalized, uf)
-    const url = buildResultadosUrl({ q: normalized, uf })
-    window.history.pushState({}, '', url)
-    window.dispatchEvent(new PopStateEvent('popstate'))
-    onNavigate?.()
+    navegarPara(buildResultadosUrl({ q: normalized, uf }))
+  }
+
+  function handleChipClick(termo: string) {
+    registrarBusca(termo, uf)
+    navegarPara(buildResultadosUrl({ q: termo, uf }))
+  }
+
+  function handleLimparBuscas() {
+    limparBuscas()
+    setBuscasRecentes([])
   }
 
   return (
@@ -61,6 +95,43 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <UfSelector value={uf} onChange={setUf} />
           </div>
         </form>
+
+        <div className="home-farmacias" aria-label="Farmácias monitoradas">
+          <span className="home-farmacias__label">Farmácias monitoradas:</span>
+          <div className="home-farmacias__chips">
+            {farmaciasMonitoradas.map((farmacia) => (
+              <span key={farmacia} className="home-farmacias__chip" title={farmacia}>
+                <span className="home-farmacias__avatar" aria-hidden="true">
+                  {farmacia
+                    .split(' ')
+                    .map((parte) => parte[0])
+                    .join('')
+                    .slice(0, 2)}
+                </span>
+                <span>{farmacia}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {buscasRecentes.length > 0 ? (
+          <div className="home-recentes" aria-label="Buscas recentes">
+            <span className="home-recentes__label">Buscas recentes:</span>
+            {buscasRecentes.map((busca) => (
+              <button
+                key={busca.id}
+                type="button"
+                className="home-recentes__chip"
+                onClick={() => handleChipClick(busca.termo)}
+              >
+                {busca.termo}
+              </button>
+            ))}
+            <button type="button" className="home-recentes__clear" onClick={handleLimparBuscas}>
+              Limpar histórico
+            </button>
+          </div>
+        ) : null}
       </section>
 
       <InfoCards />

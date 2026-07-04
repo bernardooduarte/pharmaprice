@@ -50,9 +50,9 @@ pharmaprice/
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── components/         # MedicamentoInfoCard, PmcPricingCard, HistoricoPrecosTable, etc.
-│   │   ├── pages/               # HomePage, ResultadosPage, DetalhesPage
-│   │   └── services/            # Chamadas à API (api.ts)
+│   │   ├── components/         # MedicamentoInfoCard, PmcPricingCard, HistoricoPrecosTable, Assistente, etc.
+│   │   ├── pages/               # HomePage, ResultadosPage, DetalhesPage, Configuracoes, ComoFunciona, Sobre
+│   │   └── services/            # Chamadas à API, histórico e configurações locais
 │   └── package.json
 ├── docker-compose.yml           # PostgreSQL local para desenvolvimento
 ├── .env.example
@@ -101,11 +101,17 @@ npm run dev
 
 App disponível em: <http://localhost:5173>
 
+Variável de ambiente opcional para alterar a API do frontend:
+
+```bash
+VITE_API_URL=http://127.0.0.1:8000
+```
+
 ### 4. Rodar os testes
 
 ```bash
 cd backend
-pytest --cov=app tests/
+python -m pytest --cov=app tests/ --cov-report=term-missing
 ```
 
 ---
@@ -122,18 +128,26 @@ pytest --cov=app tests/
 - [x] API REST documentada (FastAPI + Swagger automático)
 - [x] Frontend completo do fluxo principal: Home → Resultados → Detalhes
 - [x] Design responsivo baseado em protótipo Figma
+- [x] Histórico local de buscas e visitas no navegador, sem envio ao backend
+- [x] Chips de buscas recentes na Home
+- [x] Cards de resultado com indicação visual de PMC disponível/não publicado
+- [x] Gráfico de evolução de preços na tela de detalhes
+- [x] Seção de equivalentes na tela de detalhes
+- [x] Tela de Configurações com persistência local
+- [x] Páginas "Como Funciona" e "Sobre"
+- [x] Assistente FAQ local com respostas pré-definidas
+- [x] Variável de ambiente para a URL da API no frontend
+- [x] Cobertura de testes do backend acima de 70%
+- [x] Farmácias monitoradas na busca: Drogasil, Araújo, Pacheco, São Paulo, Ultrafarma, Raia e Indiana
 
 ### Em desenvolvimento
 
-- [ ] Seção de histórico de buscas (Home)
-- [ ] Páginas "Como Funciona" e "Sobre"
-- [ ] Tela de Configurações (preferências de usuário, raio de busca)
-- [ ] Assistente de IA conversacional
-- [ ] Scraping real de farmácias (Drogasil, Ultrafarma)
+- [ ] Scraping real de farmácias com coleta automática de preços
+- [ ] Exibição de logos oficiais das farmácias, quando houver autorização de uso
 - [ ] Login / cadastro de usuário
 - [ ] Geolocalização com raio configurável
 - [ ] Convênios de desconto
-- [ ] Cobertura de testes ≥ 70%
+- [ ] Sincronização opcional de dados de uso com backend após autenticação
 
 ---
 
@@ -146,3 +160,9 @@ pytest --cov=app tests/
 ## Licença
 
 MIT License — veja [LICENSE](./LICENSE) para detalhes.
+
+---
+
+## Observação de estado atual
+
+O protótipo funcional e o material de apresentação já cobrem o fluxo principal e as telas complementares. As pendências acima são integrações maiores de produto, especialmente autenticação, geolocalização, convênios e scraping automatizado de farmácias.

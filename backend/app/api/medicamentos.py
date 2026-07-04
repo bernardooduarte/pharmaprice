@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Optional
+from difflib import SequenceMatcher
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -172,25 +173,46 @@ def buscar_medicamentos(
 ):
     campo_pmc = _campo_pmc_por_uf(uf)
 
-    resultados = (
-        db.query(Medicamento)
-        .filter(
-            or_(
-                func.similarity(Medicamento.substancia, q) > 0.2,
-                func.similarity(Medicamento.produto, q) > 0.2,
-                Medicamento.substancia.ilike(f"%{q}%"),
-                Medicamento.produto.ilike(f"%{q}%"),
+    if db.get_bind().dialect.name == "sqlite":
+        candidatos = db.query(Medicamento).all()
+
+        def pontuacao(medicamento: Medicamento) -> float:
+            produto = medicamento.produto or ""
+            substancia = medicamento.substancia or ""
+            return max(
+                SequenceMatcher(None, produto.lower(), q.lower()).ratio(),
+                SequenceMatcher(None, substancia.lower(), q.lower()).ratio(),
             )
+
+        resultados = [
+            medicamento
+            for medicamento in candidatos
+            if q.lower() in (medicamento.produto or "").lower()
+            or q.lower() in (medicamento.substancia or "").lower()
+            or pontuacao(medicamento) > 0.2
+        ]
+        resultados.sort(key=pontuacao, reverse=True)
+        resultados = resultados[:limit]
+    else:
+        resultados = (
+            db.query(Medicamento)
+            .filter(
+                or_(
+                    func.similarity(Medicamento.substancia, q) > 0.2,
+                    func.similarity(Medicamento.produto, q) > 0.2,
+                    Medicamento.substancia.ilike(f"%{q}%"),
+                    Medicamento.produto.ilike(f"%{q}%"),
+                )
+            )
+            .order_by(
+                func.greatest(
+                    func.similarity(Medicamento.produto, q),
+                    func.similarity(Medicamento.substancia, q),
+                ).desc()
+            )
+            .limit(limit)
+            .all()
         )
-        .order_by(
-            func.greatest(
-                func.similarity(Medicamento.produto, q),
-                func.similarity(Medicamento.substancia, q),
-            ).desc()
-        )
-        .limit(limit)
-        .all()
-    )
 
     return [
         MedicamentoResumoResponse(
@@ -244,6 +266,49 @@ def detalhar_medicamento(
         data_publicacao_cmed=medicamento.data_publicacao_cmed,
         historico_precos_count=len(medicamento.historico_precos),
     )
+
+
+@router.get("/{medicamento_id}/equivalentes", response_model=list[MedicamentoResumoResponse])
+def listar_equivalentes(
+    medicamento_id: int,
+    uf: str = Query("MG", min_length=2, max_length=2),
+    limit: int = Query(6, le=12),
+    db: Session = Depends(get_db),
+):
+    """
+    Retorna medicamentos com a mesma substancia e UF, excluindo o proprio medicamento.
+    Usado para exibir equivalentes na tela de detalhes.
+    """
+    medicamento = _buscar_medicamento_ou_404(db, medicamento_id)
+    campo_pmc = _campo_pmc_por_uf(uf)
+
+    equivalentes = (
+        db.query(Medicamento)
+        .filter(
+            Medicamento.substancia == medicamento.substancia,
+            Medicamento.id != medicamento_id,
+        )
+        .order_by(Medicamento.tipo_produto.asc(), Medicamento.produto.asc())
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        MedicamentoResumoResponse(
+            id=m.id,
+            produto=m.produto,
+            substancia=m.substancia,
+            apresentacao=m.apresentacao,
+            laboratorio=m.laboratorio,
+            tipo_produto=m.tipo_produto,
+            classe_terapeutica=m.classe_terapeutica,
+            pmc=_to_float(getattr(m, campo_pmc)),
+            campo_pmc_usado=campo_pmc,
+            uf=uf.upper(),
+            data_publicacao_cmed=m.data_publicacao_cmed,
+        )
+        for m in equivalentes
+    ]
 
 
 @router.get(

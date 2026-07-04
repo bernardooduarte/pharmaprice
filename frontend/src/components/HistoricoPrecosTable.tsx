@@ -1,20 +1,11 @@
-import React from "react";
-
-interface HistoricoPreco {
-  id: number;
-  farmacia: string;
-  preco: number;
-  uf: string;
-  coletado_em: string;
-  fonte?: string;
-}
+import type { HistoricoPreco } from '../services/api'
 
 interface HistoricoPrecosTableProps {
   historico: HistoricoPreco[];
   uf: string;
 }
 
-const HistoricoPrecosTable: React.FC<HistoricoPrecosTableProps> = ({ historico, uf }) => {
+const HistoricoPrecosTable = ({ historico, uf }: HistoricoPrecosTableProps) => {
   if (historico.length === 0) {
     return (
       <div className="card historico-card historico-vazio">
@@ -33,23 +24,25 @@ const HistoricoPrecosTable: React.FC<HistoricoPrecosTableProps> = ({ historico, 
         <table className="historico-table">
           <thead>
             <tr>
-              <th>Farmácia</th>
+              <th>Fonte</th>
               <th>Preço</th>
               <th>UF</th>
               <th>Data coleta</th>
-              <th>Fonte</th>
+              <th>Tipo</th>
+              <th>Observação</th>
             </tr>
           </thead>
           <tbody>
             {historico.map((h) => (
               <tr key={h.id}>
-                <td>{h.farmacia}</td>
+                <td>{h.fonte}</td>
                 <td className="td-preco">
                   {h.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </td>
                 <td>{h.uf}</td>
-                <td>{new Date(h.coletado_em).toLocaleDateString("pt-BR")}</td>
-                <td>{h.fonte || "—"}</td>
+                <td>{new Date(h.data_coleta).toLocaleDateString("pt-BR")}</td>
+                <td>{h.tipo_fonte}</td>
+                <td>{h.observacao || "—"}</td>
               </tr>
             ))}
           </tbody>

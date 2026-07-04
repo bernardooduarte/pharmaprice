@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://127.0.0.1:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 
 export type SearchMedicamentosParams = {
   q: string
@@ -148,6 +148,19 @@ export async function buscarComparacaoPrecos(id: string, uf: string) {
     response,
     'Nao foi possivel carregar a comparacao com PMC.',
   )
+}
+
+export async function buscarEquivalentes(id: string, uf: string): Promise<MedicamentoResultado[]> {
+  const searchParams = new URLSearchParams({ uf })
+  const response = await fetch(
+    `${API_BASE_URL}/medicamentos/${id}/equivalentes?${searchParams.toString()}`,
+  )
+
+  if (!response.ok) {
+    return []
+  }
+
+  return response.json() as Promise<MedicamentoResultado[]>
 }
 
 export { API_BASE_URL }

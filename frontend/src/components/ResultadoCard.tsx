@@ -1,4 +1,3 @@
-import { PmcAlert } from './PmcAlert'
 import type { MedicamentoResultado } from '../services/api'
 
 type ResultadoCardProps = {
@@ -7,6 +6,7 @@ type ResultadoCardProps = {
 
 export function ResultadoCard({ medicamento }: ResultadoCardProps) {
   const detalhesUrl = `/medicamentos/${medicamento.id}?uf=${medicamento.uf}`
+  const pmcDisponivel = medicamento.pmc !== null
 
   return (
     <article className="resultado-card">
@@ -19,7 +19,15 @@ export function ResultadoCard({ medicamento }: ResultadoCardProps) {
         <p className="resultado-card__substancia">{medicamento.substancia}</p>
       </div>
 
-      <PmcAlert pmc={medicamento.pmc} uf={medicamento.uf} />
+      <div className="resultado-card__pmc">
+        <span
+          className={`pmc-disponivel-badge ${pmcDisponivel ? 'pmc-disponivel-badge--ok' : 'pmc-disponivel-badge--null'}`}
+          title="Preço Máximo ao Consumidor — CMED"
+        >
+          {pmcDisponivel ? 'PMC disponível' : 'PMC não publicado'}
+        </span>
+        <p className="resultado-card__pmc-text">Preço Máximo ao Consumidor — CMED</p>
+      </div>
 
       <dl className="resultado-card__details">
         <div>

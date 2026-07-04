@@ -1,25 +1,11 @@
-import React from "react";
-
-interface ComparacaoPrecos {
-  medicamento_id: number;
-  produto: string;
-  uf: string;
-  pmc: number | null;
-  precos_encontrados: {
-    farmacia: string;
-    preco: number;
-    diferenca_pmc: number | null;
-    percentual_pmc: number | null;
-    coletado_em: string;
-  }[];
-}
+import type { ComparacaoPrecos } from '../services/api'
 
 interface PmcPricingCardProps {
   comparacao: ComparacaoPrecos;
 }
 
-const PmcPricingCard: React.FC<PmcPricingCardProps> = ({ comparacao }) => {
-  const { pmc, uf, precos_encontrados } = comparacao;
+const PmcPricingCard = ({ comparacao }: PmcPricingCardProps) => {
+  const { pmc, uf, precos_encontrados } = comparacao
 
   return (
     <div className="card pmc-card">
@@ -45,23 +31,22 @@ const PmcPricingCard: React.FC<PmcPricingCardProps> = ({ comparacao }) => {
         <div className="pmc-comparacoes">
           <h4 className="pmc-comparacoes-titulo">Preços coletados</h4>
           {precos_encontrados.map((p, i) => {
-            const abaixo = p.diferenca_pmc !== null && p.diferenca_pmc < 0;
-            const acima = p.diferenca_pmc !== null && p.diferenca_pmc > 0;
+            const abaixo = p.acima_pmc === false;
+            const acima = p.acima_pmc === true;
             return (
               <div key={i} className="pmc-comparacao-row">
-                <span className="pmc-farmacia">{p.farmacia}</span>
+                <span className="pmc-farmacia">{p.fonte}</span>
                 <span className="pmc-preco-coletado">
-                  {p.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  {p.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </span>
-                {p.diferenca_pmc !== null && (
-                  <span className={`pmc-diff ${abaixo ? "diff-ok" : acima ? "diff-alerta" : ""}`}>
-                    {abaixo ? "▼" : "▲"}{" "}
-                    {Math.abs(p.diferenca_pmc).toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
+                {p.diferenca_valor !== null && (
+                  <span className={`pmc-diff ${abaixo ? 'diff-ok' : acima ? 'diff-alerta' : ''}`}>
+                    {Math.abs(p.diferenca_valor).toLocaleString('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
                     })}
-                    {p.percentual_pmc !== null &&
-                      ` (${Math.abs(p.percentual_pmc).toFixed(1)}% ${abaixo ? "abaixo" : "acima"} do PMC)`}
+                    {p.diferenca_percentual !== null &&
+                      ` (${Math.abs(p.diferenca_percentual).toFixed(1)}% ${abaixo ? 'abaixo' : 'acima'} do PMC)`}
                   </span>
                 )}
               </div>
