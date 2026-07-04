@@ -17,15 +17,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
   const [uf, setUf] = useState(() => getConfiguracoes().uf)
   const [error, setError] = useState<string>()
   const [buscasRecentes, setBuscasRecentes] = useState(() => getBuscas())
-  const farmaciasMonitoradas = [
-    'Drogasil',
-    'Araújo',
-    'Pacheco',
-    'São Paulo',
-    'Ultrafarma',
-    'Raia',
-    'Indiana',
-  ]
 
   useEffect(() => {
     function carregarBuscas() {
@@ -95,24 +86,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <UfSelector value={uf} onChange={setUf} />
           </div>
         </form>
-
-        <div className="home-farmacias" aria-label="Farmácias monitoradas">
-          <span className="home-farmacias__label">Farmácias monitoradas:</span>
-          <div className="home-farmacias__chips">
-            {farmaciasMonitoradas.map((farmacia) => (
-              <span key={farmacia} className="home-farmacias__chip" title={farmacia}>
-                <span className="home-farmacias__avatar" aria-hidden="true">
-                  {farmacia
-                    .split(' ')
-                    .map((parte) => parte[0])
-                    .join('')
-                    .slice(0, 2)}
-                </span>
-                <span>{farmacia}</span>
-              </span>
-            ))}
-          </div>
-        </div>
 
         {buscasRecentes.length > 0 ? (
           <div className="home-recentes" aria-label="Buscas recentes">

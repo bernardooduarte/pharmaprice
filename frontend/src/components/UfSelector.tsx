@@ -1,4 +1,8 @@
-const UF_OPTIONS = ['MG', 'SP', 'RJ', 'PR', 'RS', 'SC'] as const
+const UF_OPTIONS = [
+  'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO',
+  'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR',
+  'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO',
+] as const
 
 type UfSelectorProps = {
   value: string
