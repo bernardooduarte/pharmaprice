@@ -241,9 +241,14 @@ def main() -> None:
                 continue
 
             for registro in semente["registros"]:
+                if "preco" in registro:
+                    preco_final = registro["preco"]
+                else:
+                    preco_final = calcular_preco(Decimal(pmc), registro["multiplicador"])
+
                 historico = HistoricoPreco(
                     medicamento_id=medicamento.id,
-                    preco=calcular_preco(Decimal(pmc), registro["multiplicador"]),
+                    preco=preco_final,
                     pmc=pmc,
                     uf=semente["uf"],
                     fonte=registro["fonte"],

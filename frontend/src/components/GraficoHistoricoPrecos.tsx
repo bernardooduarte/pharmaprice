@@ -30,11 +30,11 @@ function formatarData(dataISO: string): string {
   return new Date(dataISO).toLocaleDateString('pt-BR')
 }
 
-function tooltipFormatter(valor: number, nome: string) {
-  if (nome === 'preco') {
+function tooltipFormatter(valor: unknown, nome: unknown) {
+  if (nome === 'preco' && typeof valor === 'number') {
     return [formatarMoeda(valor), 'Preço']
   }
-  return [valor, nome]
+  return [String(valor ?? ''), String(nome ?? '')]
 }
 
 export function GraficoHistoricoPrecos({ historico, pmc }: GraficoHistoricoPrecosProps) {

@@ -5,10 +5,10 @@ interface Medicamento {
   produto: string;
   substancia: string;
   apresentacao: string;
-  laboratorio?: string;
-  tipo_produto?: string;
-  classe_terapeutica?: string;
-  data_publicacao_cmed?: string;
+  laboratorio?: string | null;
+  tipo_produto?: string | null;
+  classe_terapeutica?: string | null;
+  data_publicacao_cmed?: string | null;
 }
 
 interface MedicamentoInfoCardProps {
@@ -16,7 +16,7 @@ interface MedicamentoInfoCardProps {
   uf: string;
 }
 
-function labelValor(label: string, valor: string | undefined) {
+function labelValor(label: string, valor: string | null | undefined) {
   return (
     <div className="info-row">
       <span className="info-label">{label}</span>

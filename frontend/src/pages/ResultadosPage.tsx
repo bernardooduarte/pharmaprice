@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { ResultadoCard } from '../components/ResultadoCard'
-import { buscarMedicamentos, buildResultadosUrl } from '../services/api'
+import { buscarMedicamentos } from '../services/api'
 import type { MedicamentoResultado } from '../services/api'
 
 type ResultadosPageProps = {
@@ -67,8 +67,6 @@ export function ResultadosPage({ route }: ResultadosPageProps) {
     }
   }, [q, uf])
 
-  const novaBuscaUrl = buildResultadosUrl({ q, uf })
-
   return (
     <main className="resultados-page">
       <section className="resultados-hero">
@@ -85,7 +83,6 @@ export function ResultadosPage({ route }: ResultadosPageProps) {
           <a className="resultados-toolbar__back" href="/">
             Nova busca
           </a>
-          <code>{novaBuscaUrl}</code>
         </div>
       </section>
 

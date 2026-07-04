@@ -26,6 +26,11 @@ export function ResultadoCard({ medicamento }: ResultadoCardProps) {
         >
           {pmcDisponivel ? 'PMC disponível' : 'PMC não publicado'}
         </span>
+        {pmcDisponivel && (
+          <p className="resultado-card__pmc-valor">
+            {medicamento.pmc!.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          </p>
+        )}
         <p className="resultado-card__pmc-text">Preço Máximo ao Consumidor — CMED</p>
       </div>
 

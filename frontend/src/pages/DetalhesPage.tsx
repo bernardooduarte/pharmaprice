@@ -43,6 +43,7 @@ export default function DetalhesPage() {
       return
     }
 
+    const medicamentoId = id
     let ativo = true
 
     async function carregarDados() {
@@ -51,10 +52,10 @@ export default function DetalhesPage() {
 
       try {
         const [dataMed, dataHist, dataComp, dataEq] = await Promise.all([
-          buscarMedicamentoDetalhe(id, uf),
-          buscarHistoricoPrecos(id, uf),
-          buscarComparacaoPrecos(id, uf),
-          buscarEquivalentes(id, uf),
+          buscarMedicamentoDetalhe(medicamentoId, uf),
+          buscarHistoricoPrecos(medicamentoId, uf),
+          buscarComparacaoPrecos(medicamentoId, uf),
+          buscarEquivalentes(medicamentoId, uf),
         ])
 
         if (!ativo) {

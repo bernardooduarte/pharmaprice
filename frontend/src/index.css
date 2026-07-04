@@ -1198,11 +1198,21 @@ img { max-width: 100%; display: block; }
   flex-direction: column;
   gap: .35rem;
 }
+.resultado-card__pmc-valor {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--blue-600);
+  letter-spacing: -.02em;
+  margin: .25rem 0 .1rem;
+}
 .resultado-card__pmc-text {
   font-size: .72rem;
   color: var(--muted);
 }
 
+.grafico-historico-card {
+  margin-bottom: 1.25rem;
+}
 .grafico-historico-card__subtitulo {
   font-size: .8rem;
   color: var(--muted);
@@ -1336,6 +1346,16 @@ img { max-width: 100%; display: block; }
 }
 .notice-card {
   margin-top: 1rem;
+  background: var(--blue-50);
+  border-color: var(--blue-100);
+}
+.notice-card h3 {
+  color: var(--blue-700);
+}
+.notice-card p {
+  color: var(--text-md);
+  font-size: .9rem;
+  line-height: 1.65;
 }
 .page-actions {
   margin-top: 1.25rem;
