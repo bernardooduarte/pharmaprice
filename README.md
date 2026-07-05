@@ -15,22 +15,23 @@ Instituto Federal de Educação, Ciência e Tecnologia do Sudeste de Minas Gerai
 
 O PharmaPrice é um sistema web responsivo que integra dados regulatórios da CMED (Câmara de Regulação do Mercado de Medicamentos/ANVISA) com preços de medicamentos, permitindo ao consumidor comparar o preço encontrado com o Preço Máximo ao Consumidor (PMC) definido pelo governo.
 
-O principal diferencial do sistema é tornar visível o teto regulatório da CMED no momento da decisão de compra — algo que as plataformas comerciais existentes (Consulta Remédios, CliqueFarma) não fazem explicitamente.
+O principal diferencial do sistema é tornar visível o teto regulatório da CMED no momento da decisão de compra — algo que plataformas comerciais existentes como Consulta Remédios e CliqueFarma não fazem explicitamente.
 
-Este repositório contém a **implementação do protótipo funcional** desenvolvida no TCC2. O modelo conceitual completo foi publicado no XII Congresso Internacional em Tecnologia e Organização da Informação (TOI 2026).
+Este repositório contém a **implementação do protótipo funcional** desenvolvida no TCC2. O modelo conceitual completo foi apresentado e aceito no XII Congresso Internacional em Tecnologia e Organização da Informação (TOI 2026).
 
 ---
 
 ## Stack tecnológica
 
-| Camada          | Tecnologia                   | Versão        |
-| --------------- | ----------------------------- | ------------- |
-| Backend         | Python + FastAPI             | 3.12 / 0.115+ |
-| Banco de dados  | PostgreSQL                   | 16            |
-| ORM             | SQLAlchemy + Alembic         | 2.x           |
-| Frontend        | React + Vite + TypeScript    | 18 / 5.x      |
-| Testes          | pytest + pytest-cov          | —             |
-| Containerização | Docker + Docker Compose      | —             |
+| Camada          | Tecnologia                | Versão        |
+| --------------- | ------------------------- | ------------- |
+| Backend         | Python + FastAPI          | 3.12 / 0.115+ |
+| Banco de dados  | PostgreSQL                | 16            |
+| ORM             | SQLAlchemy + Alembic      | 2.x           |
+| Frontend        | React + Vite + TypeScript | 18 / 5.x      |
+| Visualização    | Recharts                  | —             |
+| Testes          | pytest + pytest-cov       | —             |
+| Containerização | Docker + Docker Compose   | —             |
 
 ---
 
@@ -40,22 +41,25 @@ Este repositório contém a **implementação do protótipo funcional** desenvol
 pharmaprice/
 ├── backend/
 │   ├── app/
-│   │   ├── api/               # Rotas e endpoints (medicamentos, histórico, comparação)
-│   │   ├── core/               # Configurações, variáveis de ambiente
-│   │   ├── db/                 # Modelos SQLAlchemy, sessão, migrations
-│   │   ├── cmed/                # Pipeline de importação CMED/PMC
-│   │   └── scripts/            # Scripts auxiliares (seed de dados)
-│   ├── alembic/                # Migrations
-│   ├── tests/                  # Testes automatizados (pytest)
+│   │   ├── api/            # Endpoints REST (busca, detalhe, histórico, comparação, equivalentes)
+│   │   ├── core/           # Configurações e variáveis de ambiente
+│   │   ├── db/             # Modelos SQLAlchemy, sessão e migrations Alembic
+│   │   ├── cmed/           # Pipeline de importação da tabela CMED/ANVISA
+│   │   └── scripts/        # Scripts auxiliares (seed de dados demonstrativos)
+│   ├── alembic/            # Migrations do banco de dados
+│   ├── tests/              # Testes automatizados (pytest)
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── components/         # MedicamentoInfoCard, PmcPricingCard, HistoricoPrecosTable, Assistente, etc.
-│   │   ├── pages/               # HomePage, ResultadosPage, DetalhesPage, Configuracoes, ComoFunciona, Sobre
-│   │   └── services/            # Chamadas à API, histórico e configurações locais
+│   │   ├── components/     # ResultadoCard, PmcPricingCard, GraficoHistoricoPrecos,
+│   │   │                   # EquivalentesSection, Assistente, HistoricoPrecosTable, etc.
+│   │   ├── pages/          # HomePage, ResultadosPage, DetalhesPage, HistoricoPage,
+│   │   │                   # ConfiguracoesPage, ComoFuncionaPage, SobrePage
+│   │   └── services/       # api.ts, historico.ts, configuracoes.ts
+│   ├── .env.example
 │   └── package.json
-├── docker-compose.yml           # PostgreSQL local para desenvolvimento
-├── .env.example
+├── docker-compose.yml      # PostgreSQL local para desenvolvimento
+├── env.example
 └── README.md
 ```
 
@@ -75,6 +79,8 @@ pharmaprice/
 docker compose up -d db
 ```
 
+O banco sobe na porta `5434` (configurável em `docker-compose.yml`).
+
 ### 2. Backend
 
 ```bash
@@ -82,14 +88,19 @@ cd backend
 python -m venv venv
 source venv/bin/activate        # Linux/macOS
 # venv\Scripts\activate         # Windows
+
 pip install -r requirements.txt
-alembic upgrade head            # Criar tabelas
-python -m app.cmed.importar "caminho/para/cmed.xlsx"   # Importar dados CMED (arquivo não versionado)
+alembic upgrade head
+python -m app.cmed.importar "caminho/para/cmed.xlsx"
 uvicorn app.main:app --reload
 ```
 
-API disponível em: <http://localhost:8000>
-Documentação Swagger: <http://localhost:8000/docs>
+> A planilha `cmed.xlsx` deve ser baixada diretamente da ANVISA:
+> https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos
+> O arquivo não é versionado no repositório (`.gitignore`).
+
+API disponível em: http://localhost:8000
+Documentação Swagger: http://localhost:8000/docs
 
 ### 3. Frontend
 
@@ -99,20 +110,43 @@ npm install
 npm run dev
 ```
 
-App disponível em: <http://localhost:5173>
+App disponível em: http://localhost:5173
 
-Variável de ambiente opcional para alterar a API do frontend:
+Para alterar a URL da API (ex: produção):
 
 ```bash
+# frontend/.env
 VITE_API_URL=http://127.0.0.1:8000
 ```
 
-### 4. Rodar os testes
+### 4. Dados demonstrativos (histórico de preços)
+
+Para popular a tabela de histórico com dados de demonstração:
 
 ```bash
 cd backend
-python -m pytest --cov=app tests/ --cov-report=term-missing
+python -m app.scripts.seed_historico_precos
 ```
+
+### 5. Testes
+
+```bash
+cd backend
+pytest --cov=app tests/ --cov-report=term-missing
+```
+
+---
+
+## Endpoints da API
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/medicamentos/?q=&uf=` | Busca fuzzy por nome ou princípio ativo com PMC por UF |
+| `GET` | `/medicamentos/{id}` | Detalhe completo do medicamento |
+| `GET` | `/medicamentos/{id}/historico-precos?uf=` | Histórico de preços coletados |
+| `POST` | `/medicamentos/{id}/historico-precos` | Inserção de novo registro de preço |
+| `GET` | `/medicamentos/{id}/comparacao-precos?uf=` | Comparação entre preço coletado e PMC |
+| `GET` | `/medicamentos/{id}/equivalentes?uf=` | Medicamentos com a mesma substância ativa |
 
 ---
 
@@ -120,49 +154,41 @@ python -m pytest --cov=app tests/ --cov-report=term-missing
 
 ### Implementado
 
-- [x] Pipeline de integração com tabela CMED/PMC (importação via planilha oficial)
+- [x] Pipeline de importação e normalização da tabela CMED/ANVISA
 - [x] Busca de medicamento por nome comercial ou princípio ativo (busca fuzzy com pg_trgm)
-- [x] PMC dinâmico por UF
-- [x] Histórico de preços por medicamento e UF
-- [x] Comparação explícita entre preço coletado e PMC da CMED
+- [x] PMC dinâmico por UF — todas as 27 unidades federativas
+- [x] Histórico de preços por medicamento e UF com dados demonstrativos
+- [x] Comparação explícita entre preço coletado e PMC (valor e percentual)
+- [x] Equivalentes: medicamentos com a mesma substância ativa (genérico, similar, referência)
 - [x] API REST documentada (FastAPI + Swagger automático)
-- [x] Frontend completo do fluxo principal: Home → Resultados → Detalhes
-- [x] Design responsivo baseado em protótipo Figma
-- [x] Histórico local de buscas e visitas no navegador, sem envio ao backend
+- [x] Frontend — fluxo principal: Home → Resultados → Detalhes
+- [x] Frontend — telas complementares: Histórico, Configurações, Como Funciona, Sobre
+- [x] Gráfico de evolução de preços com linha de referência no PMC (Recharts)
+- [x] Assistente FAQ com respostas pré-definidas sobre o sistema e regulação de preços
+- [x] Histórico local de buscas e visitas (localStorage, conforme princípios da LGPD)
 - [x] Chips de buscas recentes na Home
-- [x] Cards de resultado com indicação visual de PMC disponível/não publicado
-- [x] Gráfico de evolução de preços na tela de detalhes
-- [x] Seção de equivalentes na tela de detalhes
-- [x] Tela de Configurações com persistência local
-- [x] Páginas "Como Funciona" e "Sobre"
-- [x] Assistente FAQ local com respostas pré-definidas
-- [x] Variável de ambiente para a URL da API no frontend
-- [x] Cobertura de testes do backend acima de 70%
-- [x] Farmácias monitoradas na busca: Drogasil, Araújo, Pacheco, São Paulo, Ultrafarma, Raia e Indiana
+- [x] Configurações de usuário com persistência local (UF, raio, preferências de tipo)
+- [x] Design responsivo baseado em protótipo Figma
+- [x] Testes automatizados do backend (pipeline CMED, endpoints de busca e histórico)
+- [x] Variável de ambiente para URL da API (`VITE_API_URL`)
 
-### Em desenvolvimento
+### Pendente / Trabalhos futuros
 
-- [ ] Scraping real de farmácias com coleta automática de preços
-- [ ] Exibição de logos oficiais das farmácias, quando houver autorização de uso
-- [ ] Login / cadastro de usuário
-- [ ] Geolocalização com raio configurável
-- [ ] Convênios de desconto
-- [ ] Sincronização opcional de dados de uso com backend após autenticação
+- [ ] Scraping automatizado de farmácias (Drogasil, Ultrafarma, Droga Raia e outras)
+- [ ] Login e cadastro de usuário com sincronização de histórico e preferências
+- [ ] Geolocalização com raio de busca configurável por GPS ou CEP
+- [ ] Mapeamento de convênios de desconto por farmácia
+- [ ] Monitoramento de preços com alertas ao usuário
+- [ ] Validação empírica com usuários reais (usabilidade e acurácia)
 
 ---
 
 ## Publicações relacionadas
 
-- DUARTE, B. O.; MORAES, E. A. P. PharmaPrice: Sistema Web Inteligente para Comparação de Preços de Medicamentos com Integração de Dados Regulatórios da CMED. In: XII Congresso Internacional em Tecnologia e Organização da Informação (TOI 2026), São Paulo, 2026.
+- DUARTE, B. O.; MORAES, E. A. P. PharmaPrice: Sistema Web Inteligente para Comparação de Preços de Medicamentos com Integração de Dados Regulatórios da CMED. In: **XII Congresso Internacional em Tecnologia e Organização da Informação (TOI 2026)**, São Paulo, 2026.
 
 ---
 
 ## Licença
 
 MIT License — veja [LICENSE](./LICENSE) para detalhes.
-
----
-
-## Observação de estado atual
-
-O protótipo funcional e o material de apresentação já cobrem o fluxo principal e as telas complementares. As pendências acima são integrações maiores de produto, especialmente autenticação, geolocalização, convênios e scraping automatizado de farmácias.
