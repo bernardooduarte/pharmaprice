@@ -1,0 +1,174 @@
+classDiagram
+    direction TB
+
+    class Base {
+        <<DeclarativeBase>>
+    }
+
+    class Medicamento {
+        +int id
+        +str substancia
+        +str produto
+        +str apresentacao
+        +str laboratorio
+        +str cnpj
+        +str codigo_ggrem
+        +str registro
+        +str ean1
+        +str classe_terapeutica
+        +str tipo_produto
+        +str regime_preco
+        +str tarja
+        +Decimal pf_sem_impostos
+        +Decimal pf_0
+        +Decimal pmc_sem_impostos
+        +Decimal pmc_0
+        +Decimal pmc_12
+        +Decimal pmc_17
+        +Decimal pmc_18
+        +Decimal pmc_19
+        +Decimal pmc_20
+        +bool restricao_hospitalar
+        +bool cap
+        +bool confaz_87
+        +bool icms_0
+        +str comercializacao_2025
+        +datetime data_coleta
+        +str fonte_url
+        +str data_publicacao_cmed
+        +List~HistoricoPreco~ historico_precos
+    }
+
+    class HistoricoPreco {
+        +int id
+        +int medicamento_id
+        +Decimal preco
+        +Decimal pmc
+        +str uf
+        +str fonte
+        +str tipo_fonte
+        +datetime data_coleta
+        +str observacao
+        +datetime created_at
+        +Medicamento medicamento
+    }
+
+    class Settings {
+        <<pydantic BaseSettings>>
+        +str database_url
+        +normalize_database_url()
+    }
+
+    class MedicamentoResumoResponse {
+        <<Pydantic Schema>>
+        +int id
+        +str produto
+        +str substancia
+        +str apresentacao
+        +str laboratorio
+        +str tipo_produto
+        +str classe_terapeutica
+        +float pmc
+        +str campo_pmc_usado
+        +str uf
+        +str data_publicacao_cmed
+    }
+
+    class MedicamentoDetalheResponse {
+        <<Pydantic Schema>>
+        +int id
+        +str produto
+        +str substancia
+        +str apresentacao
+        +str laboratorio
+        +str cnpj
+        +str codigo_ggrem
+        +str registro
+        +str ean1
+        +str classe_terapeutica
+        +str tipo_produto
+        +str regime_preco
+        +str tarja
+        +float pf_sem_impostos
+        +float pf_0
+        +float pmc_sem_impostos
+        +float pmc_0
+        +float pmc_12
+        +float pmc_17
+        +float pmc_18
+        +float pmc_19
+        +float pmc_20
+        +str fonte_url
+        +str data_publicacao_cmed
+        +int historico_precos_count
+    }
+
+    class HistoricoPrecoCreateRequest {
+        <<Pydantic Schema>>
+        +Decimal preco
+        +Decimal pmc
+        +str uf
+        +str fonte
+        +str tipo_fonte
+        +datetime data_coleta
+        +str observacao
+    }
+
+    class HistoricoPrecoResponse {
+        <<Pydantic Schema>>
+        +int id
+        +int medicamento_id
+        +float preco
+        +float pmc
+        +str uf
+        +str fonte
+        +str tipo_fonte
+        +datetime data_coleta
+        +str observacao
+        +datetime created_at
+    }
+
+    class ComparacaoPrecoItemResponse {
+        <<Pydantic Schema>>
+        +float preco
+        +str fonte
+        +str tipo_fonte
+        +datetime data_coleta
+        +bool acima_pmc
+        +float diferenca_valor
+        +float diferenca_percentual
+    }
+
+    class ComparacaoPrecosResponse {
+        <<Pydantic Schema>>
+        +int medicamento_id
+        +str produto
+        +str substancia
+        +str apresentacao
+        +str uf
+        +float pmc
+        +List~ComparacaoPrecoItemResponse~ precos_encontrados
+    }
+
+    class MedicamentosRouter {
+        <<APIRouter — app/api/medicamentos.py>>
+        +buscar_medicamentos(q, uf, limit)
+        +detalhar_medicamento(id)
+        +listar_equivalentes(id, uf)
+        +listar_historico_precos(id, uf)
+        +criar_historico_preco(id, payload)
+        +comparar_precos(id, uf)
+    }
+
+    Base <|-- Medicamento : herda
+    Base <|-- HistoricoPreco : herda
+    Medicamento "1" o-- "0..*" HistoricoPreco : historico_precos
+
+    MedicamentosRouter ..> Medicamento : consulta via ORM
+    MedicamentosRouter ..> HistoricoPreco : consulta/cria
+    MedicamentosRouter ..> MedicamentoResumoResponse : serializa
+    MedicamentosRouter ..> MedicamentoDetalheResponse : serializa
+    MedicamentosRouter ..> HistoricoPrecoCreateRequest : recebe
+    MedicamentosRouter ..> HistoricoPrecoResponse : serializa
+    MedicamentosRouter ..> ComparacaoPrecosResponse : serializa
+    ComparacaoPrecosResponse "1" o-- "0..*" ComparacaoPrecoItemResponse : precos_encontrados

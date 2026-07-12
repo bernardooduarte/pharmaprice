@@ -59,9 +59,20 @@ pharmaprice/
 │   ├── .env.example
 │   └── package.json
 ├── docker-compose.yml      # PostgreSQL local para desenvolvimento
+├── docs/                   # Diagramas e documentação complementar
+│   ├── pharmaprice_uml_classes.png
+│   └── pharmaprice_uml_classes.mmd
 ├── env.example
 └── README.md
 ```
+
+---
+
+## Diagrama de Classes
+
+Diagrama de classes UML do backend (modelos SQLAlchemy, schemas Pydantic da API e rotas), gerado com [Mermaid](https://mermaid.js.org) a partir do código-fonte atual do repositório. O arquivo-fonte editável está em [`docs/pharmaprice_uml_classes.mmd`](docs/pharmaprice_uml_classes.mmd).
+
+![Diagrama de Classes UML do PharmaPrice](docs/pharmaprice_uml_classes.png)
 
 ---
 
