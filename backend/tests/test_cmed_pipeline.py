@@ -6,7 +6,7 @@ sem depender do banco de dados ou da URL da ANVISA.
 """
 import pytest
 from decimal import Decimal
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 import openpyxl
 from io import BytesIO
 
@@ -22,6 +22,7 @@ from app.cmed.pipeline import (
     _parse_decimal,
     _parse_bool_flag,
     _row_to_dict,
+    localizar_url_xlsx_atual,
     HEADER_ROW,
     COLUMN_MAP,
 )
@@ -243,3 +244,37 @@ class TestParsearXlsx:
         substancias = {m["substancia"] for m in medicamentos}
         assert "DIPIRONA" in substancias
         assert "IBUPROFENO" in substancias
+
+
+class TestLocalizarUrlXlsxAtual:
+    @pytest.mark.asyncio
+    async def test_encontra_link_pmc_no_html(self):
+        html = """
+        <a href="https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos/arquivos/xls_conformidade_site_20260909_222937320.xlsx/@@download/file">PMC - xls</a>
+        <a href="https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos/arquivos/xls_conformidade_gov_20260909_222937320.xlsx/@@download/file">PMVG - xls</a>
+        """
+        resposta_mock = MagicMock()
+        resposta_mock.text = html
+        resposta_mock.raise_for_status = MagicMock()
+
+        cliente_mock = MagicMock()
+        cliente_mock.get = AsyncMock(return_value=resposta_mock)
+
+        url = await localizar_url_xlsx_atual(cliente_mock)
+
+        assert url == (
+            "https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos/"
+            "arquivos/xls_conformidade_site_20260909_222937320.xlsx/@@download/file"
+        )
+
+    @pytest.mark.asyncio
+    async def test_lanca_erro_se_link_nao_encontrado(self):
+        resposta_mock = MagicMock()
+        resposta_mock.text = "<html>sem links relevantes aqui</html>"
+        resposta_mock.raise_for_status = MagicMock()
+
+        cliente_mock = MagicMock()
+        cliente_mock.get = AsyncMock(return_value=resposta_mock)
+
+        with pytest.raises(RuntimeError):
+            await localizar_url_xlsx_atual(cliente_mock)

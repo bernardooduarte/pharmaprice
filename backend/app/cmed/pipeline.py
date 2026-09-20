@@ -31,6 +31,11 @@ CMED_URL = (
     "https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos"
 )
 
+# Padrão do link de download do arquivo PMC (preço ao consumidor) na página da CMED
+_LINK_XLSX_PMC = re.compile(
+    r'href="(https://www\.gov\.br/anvisa/[^"]*xls_conformidade_site_[^"]*\.xlsx/@@download/file)"'
+)
+
 # Linha do cabeçalho real na planilha (1-indexed, conforme openpyxl)
 HEADER_ROW = 43
 
@@ -171,6 +176,48 @@ def parsear_xlsx(conteudo: bytes) -> tuple[list[dict], str]:
         f"(publicação: {data_publicacao})"
     )
     return medicamentos, data_publicacao
+
+
+async def localizar_url_xlsx_atual(cliente: httpx.AsyncClient) -> str:
+    """
+    Faz scraping da página da CMED para encontrar o link de download
+    do arquivo XLSX (PMC) publicado mais recentemente.
+    """
+    resposta = await cliente.get(CMED_URL, follow_redirects=True, timeout=30.0)
+    resposta.raise_for_status()
+
+    match = _LINK_XLSX_PMC.search(resposta.text)
+    if not match:
+        raise RuntimeError(
+            "Não foi possível localizar o link do arquivo XLSX na página da CMED. "
+            "O layout da página pode ter mudado."
+        )
+    return match.group(1)
+
+
+async def baixar_xlsx_remoto(cliente: httpx.AsyncClient, url: str) -> bytes:
+    """Baixa o conteúdo binário do arquivo XLSX a partir de uma URL."""
+    resposta = await cliente.get(url, follow_redirects=True, timeout=120.0)
+    resposta.raise_for_status()
+    return resposta.content
+
+
+async def atualizar_cmed_do_site(session: Session) -> dict:
+    """
+    Ponta a ponta: localiza o arquivo mais recente no site da CMED, baixa,
+    faz o parsing e grava/atualiza os registros no banco.
+    """
+    async with httpx.AsyncClient() as cliente:
+        url_xlsx = await localizar_url_xlsx_atual(cliente)
+        conteudo = await baixar_xlsx_remoto(cliente, url_xlsx)
+
+    medicamentos, data_publicacao = parsear_xlsx(conteudo)
+    return salvar_no_banco(
+        session,
+        medicamentos,
+        data_publicacao=data_publicacao,
+        fonte_url=url_xlsx,
+    )
 
 
 def parsear_arquivo_local(caminho: str) -> tuple[list[dict], str]:
