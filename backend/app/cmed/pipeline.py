@@ -19,6 +19,7 @@ from decimal import Decimal, InvalidOperation
 from io import BytesIO
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urljoin
 
 import httpx
 import openpyxl
@@ -31,9 +32,10 @@ CMED_URL = (
     "https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos"
 )
 
-# Padrão do link de download do arquivo PMC (preço ao consumidor) na página da CMED
+# Padrão do link de download do arquivo PMC (preço ao consumidor) na página da CMED.
+# O href pode ser absoluto ou relativo (ex: "/anvisa/pt-br/.../arquivo.xlsx/@@download/file").
 _LINK_XLSX_PMC = re.compile(
-    r'href="(https://www\.gov\.br/anvisa/[^"]*xls_conformidade_site_[^"]*\.xlsx/@@download/file)"'
+    r'href="([^"]*xls_conformidade_site_[^"]*\.xlsx/@@download/file)"'
 )
 
 # Linha do cabeçalho real na planilha (1-indexed, conforme openpyxl)
@@ -192,7 +194,7 @@ async def localizar_url_xlsx_atual(cliente: httpx.AsyncClient) -> str:
             "Não foi possível localizar o link do arquivo XLSX na página da CMED. "
             "O layout da página pode ter mudado."
         )
-    return match.group(1)
+    return urljoin(str(resposta.url), match.group(1))
 
 
 async def baixar_xlsx_remoto(cliente: httpx.AsyncClient, url: str) -> bytes:

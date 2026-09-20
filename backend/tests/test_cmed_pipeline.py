@@ -255,6 +255,29 @@ class TestLocalizarUrlXlsxAtual:
         """
         resposta_mock = MagicMock()
         resposta_mock.text = html
+        resposta_mock.url = "https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos"
+        resposta_mock.raise_for_status = MagicMock()
+
+        cliente_mock = MagicMock()
+        cliente_mock.get = AsyncMock(return_value=resposta_mock)
+
+        url = await localizar_url_xlsx_atual(cliente_mock)
+
+        assert url == (
+            "https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos/"
+            "arquivos/xls_conformidade_site_20260909_222937320.xlsx/@@download/file"
+        )
+
+    @pytest.mark.asyncio
+    async def test_resolve_link_relativo_contra_url_da_pagina(self):
+        # A pagina real da ANVISA usa hrefs relativos, nao absolutos.
+        html = (
+            '<a href="/anvisa/pt-br/assuntos/medicamentos/cmed/precos/arquivos/'
+            'xls_conformidade_site_20260909_222937320.xlsx/@@download/file">PMC - xls</a>'
+        )
+        resposta_mock = MagicMock()
+        resposta_mock.text = html
+        resposta_mock.url = "https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos"
         resposta_mock.raise_for_status = MagicMock()
 
         cliente_mock = MagicMock()
@@ -271,6 +294,7 @@ class TestLocalizarUrlXlsxAtual:
     async def test_lanca_erro_se_link_nao_encontrado(self):
         resposta_mock = MagicMock()
         resposta_mock.text = "<html>sem links relevantes aqui</html>"
+        resposta_mock.url = "https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos"
         resposta_mock.raise_for_status = MagicMock()
 
         cliente_mock = MagicMock()
