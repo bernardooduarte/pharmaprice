@@ -230,6 +230,12 @@ def parsear_arquivo_local(caminho: str) -> tuple[list[dict], str]:
     return parsear_xlsx(conteudo)
 
 
+TAMANHO_LOTE = 1000
+
+# Campos obrigatorios (nullable=False) na tabela medicamentos
+_CAMPOS_OBRIGATORIOS = ("codigo_ggrem", "substancia", "produto", "apresentacao")
+
+
 def salvar_no_banco(
     session: Session,
     medicamentos: list[dict],
@@ -237,62 +243,63 @@ def salvar_no_banco(
     fonte_url: str,
 ) -> dict:
     """
-    Insere ou atualiza registros no banco.
-    Usa UPSERT por codigo_ggrem (chave única).
+    Insere ou atualiza registros no banco em lotes, via UPSERT
+    (INSERT ... ON CONFLICT) por codigo_ggrem (chave única).
+    Muito mais rápido que fazer um SELECT + INSERT/UPDATE por linha,
+    especialmente contra um banco remoto.
     Retorna estatísticas da operação.
     """
     # Import aqui para evitar dependência circular
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
     from app.db.models import Medicamento
 
-    inseridos = 0
-    atualizados = 0
-    erros = 0
     data_coleta = datetime.utcnow()
+    processados = 0
+    erros = 0
 
-    for record in medicamentos:
+    for inicio in range(0, len(medicamentos), TAMANHO_LOTE):
+        lote = medicamentos[inicio:inicio + TAMANHO_LOTE]
+        valores = []
+        for record in lote:
+            if any(not record.get(campo) for campo in _CAMPOS_OBRIGATORIOS):
+                erros += 1
+                continue
+            valores.append({
+                **record,
+                "data_coleta": data_coleta,
+                "fonte_url": fonte_url,
+                "data_publicacao_cmed": data_publicacao,
+            })
+
+        if not valores:
+            continue
+
+        stmt = pg_insert(Medicamento).values(valores)
+        colunas_update = {
+            campo: getattr(stmt.excluded, campo)
+            for campo in valores[0]
+            if campo != "codigo_ggrem"
+        }
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["codigo_ggrem"],
+            set_=colunas_update,
+        )
+
         try:
-            codigo_ggrem = record.get("codigo_ggrem")
-            existente = session.query(Medicamento).filter_by(
-                codigo_ggrem=codigo_ggrem
-            ).first()
-
-            if existente:
-                # Atualizar campos
-                for campo, valor in record.items():
-                    setattr(existente, campo, valor)
-                existente.data_coleta = data_coleta
-                existente.fonte_url = fonte_url
-                existente.data_publicacao_cmed = data_publicacao
-                atualizados += 1
-            else:
-                novo = Medicamento(
-                    **record,
-                    data_coleta=data_coleta,
-                    fonte_url=fonte_url,
-                    data_publicacao_cmed=data_publicacao,
-                )
-                session.add(novo)
-                inseridos += 1
-
-            # Commit em lotes de 500 para não sobrecarregar a memória
-            if (inseridos + atualizados) % 500 == 0:
-                session.commit()
-                logger.debug(
-                    f"Progresso: {inseridos} inseridos, {atualizados} atualizados"
-                )
-
+            session.execute(stmt)
+            session.commit()
+            processados += len(valores)
+            logger.debug(f"Progresso: {processados}/{len(medicamentos)} processados")
         except Exception as e:
-            logger.error(f"Erro ao processar GGREM {record.get('codigo_ggrem')}: {e}")
             session.rollback()
-            erros += 1
-
-    session.commit()
+            logger.error(f"Erro no lote {inicio}-{inicio + len(lote)}: {e}")
+            erros += len(valores)
 
     stats = {
-        "inseridos": inseridos,
-        "atualizados": atualizados,
+        "processados": processados,
         "erros": erros,
-        "total": inseridos + atualizados,
+        "total": len(medicamentos),
         "data_publicacao": data_publicacao,
     }
     logger.info(f"Banco atualizado: {stats}")
