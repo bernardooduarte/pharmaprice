@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { BuscaProgresso } from '../components/BuscaProgresso'
 import { ResultadoCard } from '../components/ResultadoCard'
 import { buscarMedicamentos } from '../services/api'
 import type { MedicamentoResultado } from '../services/api'
@@ -86,13 +87,7 @@ export function ResultadosPage({ route }: ResultadosPageProps) {
         </div>
       </section>
 
-      {loading ? (
-        <section className="feedback-card">
-          <p className="eyebrow">Carregando</p>
-          <h2>Buscando medicamentos...</h2>
-          <p>Aguarde enquanto consultamos os dados da CMED para a busca atual.</p>
-        </section>
-      ) : null}
+      {loading ? <BuscaProgresso termo={q} /> : null}
 
       {!loading && error ? (
         <section className="feedback-card feedback-card--error">
