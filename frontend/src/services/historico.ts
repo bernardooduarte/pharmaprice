@@ -1,18 +1,3 @@
-/**
- * Histórico local do PharmaPrice.
- *
- * Decisão de privacidade (LGPD): como o sistema ainda não possui login/autenticação,
- * o histórico de buscas e de medicamentos visitados é armazenado exclusivamente no
- * localStorage do navegador da pessoa usuária. O dado nunca trafega para o backend
- * nem é "tratado" pelo PharmaPrice como controlador — fica inteiramente sob controle
- * do dispositivo do usuário, o que evita enquadramento como dado pessoal tratado por
- * terceiro (Lei 13.709/2018, art. 5º, XI — anonimização/ausência de tratamento).
- *
- * Quando o sistema ganhar cadastro de usuário, este módulo pode ser estendido para
- * sincronizar com o backend mediante consentimento explícito, sem quebrar a API
- * pública exposta aqui (getHistorico, registrarBusca, registrarVisita, limpar*).
- */
-
 const STORAGE_KEY = 'pharmaprice:historico:v1'
 const MAX_ITEMS = 30
 
@@ -66,8 +51,7 @@ function salvar(state: HistoricoState) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     window.dispatchEvent(new CustomEvent('pharmaprice:historico-changed'))
   } catch {
-    // Quota excedida ou navegador em modo privado — falha silenciosa,
-    // a navegação principal não deve quebrar por causa do histórico.
+    return
   }
 }
 
@@ -75,7 +59,6 @@ function gerarId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-/** Registra um termo de busca. Evita duplicar a mesma busca consecutiva. */
 export function registrarBusca(termo: string, uf: string) {
   const termoNormalizado = termo.trim()
   if (termoNormalizado.length < 2) return
@@ -102,7 +85,6 @@ export function registrarBusca(termo: string, uf: string) {
   salvar(state)
 }
 
-/** Registra a visita a um medicamento (tela de detalhes). */
 export function registrarVisita(params: {
   medicamentoId: number
   produto: string
@@ -128,17 +110,14 @@ export function registrarVisita(params: {
   salvar(state)
 }
 
-/** Retorna buscas recentes (mais novo primeiro). */
 export function getBuscas(): HistoricoBusca[] {
   return ler().buscas
 }
 
-/** Retorna visitas recentes (mais novo primeiro). */
 export function getVisitas(): HistoricoVisita[] {
   return ler().visitas
 }
 
-/** Retorna os dois tipos combinados, ordenados por data decrescente. */
 export function getHistoricoCombinado(): HistoricoItem[] {
   const state = ler()
   return [...state.buscas, ...state.visitas].sort((a, b) => b.timestamp - a.timestamp)

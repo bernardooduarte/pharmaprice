@@ -39,8 +39,7 @@ app.add_middleware(
 
 app.include_router(medicamentos_router)
 
-# Estado em memoria da ultima sincronizacao com o site da CMED.
-# A sincronizacao roda em background no startup, sem bloquear a API.
+
 cmed_sync_status = {
     "em_andamento": False,
     "ultima_execucao_utc": None,

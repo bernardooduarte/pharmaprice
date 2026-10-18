@@ -35,7 +35,7 @@ class Medicamento(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    # Identificacao
+
     substancia = Column(Text, nullable=False, index=True)
     produto = Column(String(500), nullable=False, index=True)
     apresentacao = Column(String(500), nullable=False)
@@ -45,33 +45,33 @@ class Medicamento(Base):
     registro = Column(String(50))
     ean1 = Column(String(20))
 
-    # Classificacao
+
     classe_terapeutica = Column(String(200))
     tipo_produto = Column(String(100))
     regime_preco = Column(String(50))
     tarja = Column(String(100))
 
-    # Precos armazenados da CMED
+
     pf_sem_impostos = Column(Numeric(12, 2))
     pf_0 = Column(Numeric(12, 2))
     pmc_sem_impostos = Column(Numeric(12, 2))
     pmc_0 = Column(Numeric(12, 2))
 
-    # PMC por aliquota de ICMS
+
     pmc_12 = Column(Numeric(12, 2))
     pmc_17 = Column(Numeric(12, 2))
     pmc_18 = Column(Numeric(12, 2))
     pmc_19 = Column(Numeric(12, 2))
     pmc_20 = Column(Numeric(12, 2))
 
-    # Flags
+
     restricao_hospitalar = Column(Boolean, default=False)
     cap = Column(Boolean, default=False)
     confaz_87 = Column(Boolean, default=False)
     icms_0 = Column(Boolean, default=False)
     comercializacao_2025 = Column(String(10))
 
-    # Rastreabilidade
+
     data_coleta = Column(DateTime, nullable=False, default=utc_now)
     fonte_url = Column(Text)
     data_publicacao_cmed = Column(String(50))
