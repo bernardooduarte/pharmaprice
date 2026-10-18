@@ -37,6 +37,12 @@ export default function DetalhesPage() {
   const [erro, setErro] = useState<string | null>(null)
 
   useEffect(() => {
+    document.title = medicamento
+      ? `PharmaPrice - ${medicamento.produto}`
+      : 'PharmaPrice - Detalhes do medicamento'
+  }, [medicamento])
+
+  useEffect(() => {
     if (!id) {
       setErro('ID do medicamento não encontrado na URL.')
       setCarregando(false)

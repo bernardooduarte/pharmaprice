@@ -23,6 +23,15 @@ function getPage(): AppPage {
   return 'home'
 }
 
+const PAGE_TITLES: Record<Exclude<AppPage, 'detalhes'>, string> = {
+  home: 'Início',
+  resultados: 'Resultados da busca',
+  historico: 'Histórico',
+  configuracoes: 'Configurações',
+  'como-funciona': 'Como funciona',
+  sobre: 'Sobre',
+}
+
 function getUf(): string {
   return new URLSearchParams(window.location.search).get('uf')?.toUpperCase() || getConfiguracoes().uf
 }
@@ -30,6 +39,10 @@ function getUf(): string {
 const App: React.FC = () => {
   const [page, setPage] = React.useState<AppPage>(getPage)
   const [uf, setUf] = React.useState<string>(getUf)
+
+  React.useEffect(() => {
+    if (page !== 'detalhes') document.title = `PharmaPrice - ${PAGE_TITLES[page]}`
+  }, [page])
 
   React.useEffect(() => {
     function onRouteChange() {
