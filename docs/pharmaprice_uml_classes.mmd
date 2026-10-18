@@ -54,9 +54,32 @@ classDiagram
     }
 
     class Settings {
-        <<pydantic BaseSettings>>
+        <<pydantic BaseSettings — app/core/config.py>>
         +str database_url
+        +str cors_origins
+        +bool cmed_auto_sync
         +normalize_database_url()
+    }
+
+    class MainApp {
+        <<FastAPI — app/main.py>>
+        +dict cmed_sync_status
+        +lifespan()
+        +medir_tempo_requisicao(request, call_next)
+        +health()
+        +root()
+        +cmed_status()
+        -_sincronizar_cmed_em_background()
+    }
+
+    class CmedPipeline {
+        <<módulo — app/cmed/pipeline.py>>
+        +localizar_url_xlsx_atual(cliente)
+        +baixar_xlsx_remoto(cliente, url)
+        +parsear_xlsx(conteudo)
+        +parsear_arquivo_local(caminho)
+        +salvar_no_banco(session, medicamentos, ...)
+        +atualizar_cmed_do_site(session)
     }
 
     class MedicamentoResumoResponse {
@@ -160,6 +183,8 @@ classDiagram
         +comparar_precos(id, uf)
     }
 
+    note for Medicamento "Índices GIN pg_trgm em produto e substancia (migration d5e6f7a8b901)"
+
     Base <|-- Medicamento : herda
     Base <|-- HistoricoPreco : herda
     Medicamento "1" o-- "0..*" HistoricoPreco : historico_precos
@@ -172,3 +197,9 @@ classDiagram
     MedicamentosRouter ..> HistoricoPrecoResponse : serializa
     MedicamentosRouter ..> ComparacaoPrecosResponse : serializa
     ComparacaoPrecosResponse "1" o-- "0..*" ComparacaoPrecoItemResponse : precos_encontrados
+
+    MainApp ..> MedicamentosRouter : inclui rotas
+    MainApp ..> Settings : lê configuração
+    MainApp ..> CmedPipeline : sincroniza no startup
+    MainApp ..> Medicamento : consulta em /cmed/status
+    CmedPipeline ..> Medicamento : upsert por codigo_ggrem
