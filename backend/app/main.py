@@ -2,8 +2,9 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from time import perf_counter
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.medicamentos import router as medicamentos_router
@@ -12,6 +13,7 @@ from app.core.config import settings
 from app.db.models import Medicamento
 from app.db.session import SessionLocal
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -40,6 +42,20 @@ app.add_middleware(
 app.include_router(medicamentos_router)
 
 
+@app.middleware("http")
+async def medir_tempo_requisicao(request: Request, call_next):
+    inicio = perf_counter()
+    response = await call_next(request)
+    duracao_ms = (perf_counter() - inicio) * 1000
+    response.headers["Server-Timing"] = f"app;dur={duracao_ms:.1f}"
+    if request.url.path != "/health":
+        logger.info(
+            "%s %s -> %d em %.1f ms",
+            request.method, request.url.path, response.status_code, duracao_ms,
+        )
+    return response
+
+
 cmed_sync_status = {
     "em_andamento": False,
     "ultima_execucao_utc": None,
@@ -63,6 +79,11 @@ async def _sincronizar_cmed_em_background() -> None:
         session.close()
         cmed_sync_status["em_andamento"] = False
         cmed_sync_status["ultima_execucao_utc"] = datetime.now(UTC).isoformat()
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
 @app.get("/")

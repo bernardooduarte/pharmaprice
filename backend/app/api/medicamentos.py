@@ -3,13 +3,18 @@ from decimal import Decimal
 from typing import Optional
 from difflib import SequenceMatcher
 
+import logging
+from time import perf_counter
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, text
 from sqlalchemy.orm import Session
 
 from app.db.models import HistoricoPreco, Medicamento
 from app.db.session import get_db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/medicamentos", tags=["medicamentos"])
 
@@ -171,6 +176,7 @@ def buscar_medicamentos(
     limit: int = Query(20, le=100),
     db: Session = Depends(get_db),
 ):
+    inicio = perf_counter()
     campo_pmc = _campo_pmc_por_uf(uf)
 
     if db.get_bind().dialect.name == "sqlite":
@@ -194,12 +200,13 @@ def buscar_medicamentos(
         resultados.sort(key=pontuacao, reverse=True)
         resultados = resultados[:limit]
     else:
+        db.execute(text("SET LOCAL pg_trgm.similarity_threshold = 0.2"))
         resultados = (
             db.query(Medicamento)
             .filter(
                 or_(
-                    func.similarity(Medicamento.substancia, q) > 0.2,
-                    func.similarity(Medicamento.produto, q) > 0.2,
+                    Medicamento.substancia.op("%")(q),
+                    Medicamento.produto.op("%")(q),
                     Medicamento.substancia.ilike(f"%{q}%"),
                     Medicamento.produto.ilike(f"%{q}%"),
                 )
@@ -213,6 +220,11 @@ def buscar_medicamentos(
             .limit(limit)
             .all()
         )
+
+    logger.info(
+        "busca q=%r uf=%s resultados=%d db_ms=%.1f",
+        q, uf.upper(), len(resultados), (perf_counter() - inicio) * 1000,
+    )
 
     return [
         MedicamentoResumoResponse(
