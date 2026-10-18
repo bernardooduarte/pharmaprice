@@ -35,7 +35,6 @@ class Medicamento(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-
     substancia = Column(Text, nullable=False, index=True)
     produto = Column(String(500), nullable=False, index=True)
     apresentacao = Column(String(500), nullable=False)
@@ -45,18 +44,15 @@ class Medicamento(Base):
     registro = Column(String(50))
     ean1 = Column(String(20))
 
-
     classe_terapeutica = Column(String(200))
     tipo_produto = Column(String(100))
     regime_preco = Column(String(50))
     tarja = Column(String(100))
 
-
     pf_sem_impostos = Column(Numeric(12, 2))
     pf_0 = Column(Numeric(12, 2))
     pmc_sem_impostos = Column(Numeric(12, 2))
     pmc_0 = Column(Numeric(12, 2))
-
 
     pmc_12 = Column(Numeric(12, 2))
     pmc_17 = Column(Numeric(12, 2))
@@ -64,13 +60,11 @@ class Medicamento(Base):
     pmc_19 = Column(Numeric(12, 2))
     pmc_20 = Column(Numeric(12, 2))
 
-
     restricao_hospitalar = Column(Boolean, default=False)
     cap = Column(Boolean, default=False)
     confaz_87 = Column(Boolean, default=False)
     icms_0 = Column(Boolean, default=False)
     comercializacao_2025 = Column(String(10))
-
 
     data_coleta = Column(DateTime, nullable=False, default=utc_now)
     fonte_url = Column(Text)

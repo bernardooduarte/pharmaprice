@@ -196,16 +196,13 @@ def parsear_xlsx(conteudo: bytes) -> tuple[list[dict], str]:
         if row_num <= header_row:
             continue
 
-
         if all(v is None for v in row):
             continue
-
 
         if row[0] is None and row[8] is None:
             continue
 
         record = _row_to_dict(row, mapa)
-
 
         if not record.get("codigo_ggrem"):
             continue

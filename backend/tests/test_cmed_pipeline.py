@@ -34,17 +34,14 @@ def criar_xlsx_minimo(linhas_dados: list[tuple]) -> bytes:
     wb = openpyxl.Workbook()
     ws = wb.active
 
-
     ws.cell(row=1, column=1, value="Secretaria Executiva - CMED")
     ws.cell(row=3, column=1, value="Publicada em 10/06/2026 13h30min.")
-
 
     headers = [None] * 74
     for col_idx, field in COLUMN_MAP.items():
         headers[col_idx] = field.upper()
     for j, h in enumerate(headers):
         ws.cell(row=HEADER_ROW, column=j + 1, value=h)
-
 
     for i, linha in enumerate(linhas_dados):
         for j, valor in enumerate(linha):
@@ -160,7 +157,6 @@ class TestRowToDict:
     def test_tracinho_vira_none(self):
         row = linha_medicamento_valida()
         result = _row_to_dict(row)
-
 
         assert result.get("restricao_hospitalar") is False
 
