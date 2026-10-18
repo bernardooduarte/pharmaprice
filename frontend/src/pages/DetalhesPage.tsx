@@ -33,8 +33,9 @@ export default function DetalhesPage() {
   const [historico, setHistorico] = useState<HistoricoPreco[]>([])
   const [comparacao, setComparacao] = useState<ComparacaoPrecos | null>(null)
   const [equivalentes, setEquivalentes] = useState<MedicamentoResultado[]>([])
-  const [carregando, setCarregando] = useState(true)
-  const [erro, setErro] = useState<string | null>(null)
+  const [carregando, setCarregando] = useState(Boolean(id))
+  const [erroRequisicao, setErro] = useState<string | null>(null)
+  const erro = id ? erroRequisicao : 'ID do medicamento não encontrado na URL.'
 
   useEffect(() => {
     document.title = medicamento
@@ -44,8 +45,6 @@ export default function DetalhesPage() {
 
   useEffect(() => {
     if (!id) {
-      setErro('ID do medicamento não encontrado na URL.')
-      setCarregando(false)
       return
     }
 
@@ -103,7 +102,7 @@ export default function DetalhesPage() {
     window.history.back()
   }
 
-  if (carregando) {
+  if (id && carregando) {
     return (
       <div className="detalhes-container">
         <div className="detalhes-loading">
