@@ -10,9 +10,7 @@ from unittest.mock import patch, MagicMock, AsyncMock
 import openpyxl
 from io import BytesIO
 
-# Ajuste o import conforme a estrutura final do projeto
-# from app.cmed.pipeline import parsear_xlsx, _parse_decimal, _parse_bool_flag, _row_to_dict
-# Por ora, importamos direto do arquivo para testes isolados:
+
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -28,8 +26,6 @@ from app.cmed.pipeline import (
 )
 
 
-# ─── Helpers para criar planilhas de teste ──────────────────────────────────
-
 def criar_xlsx_minimo(linhas_dados: list[tuple]) -> bytes:
     """
     Cria um XLSX mínimo com cabeçalho na linha HEADER_ROW e dados logo após.
@@ -38,18 +34,18 @@ def criar_xlsx_minimo(linhas_dados: list[tuple]) -> bytes:
     wb = openpyxl.Workbook()
     ws = wb.active
 
-    # Linhas de metadados (1 a HEADER_ROW-1)
+
     ws.cell(row=1, column=1, value="Secretaria Executiva - CMED")
     ws.cell(row=3, column=1, value="Publicada em 10/06/2026 13h30min.")
 
-    # Cabeçalho real
+
     headers = [None] * 74
     for col_idx, field in COLUMN_MAP.items():
         headers[col_idx] = field.upper()
     for j, h in enumerate(headers):
         ws.cell(row=HEADER_ROW, column=j + 1, value=h)
 
-    # Dados
+
     for i, linha in enumerate(linhas_dados):
         for j, valor in enumerate(linha):
             ws.cell(row=HEADER_ROW + 1 + i, column=j + 1, value=valor)
@@ -79,11 +75,11 @@ def linha_medicamento_valida(
     row[10] = "N1 - ANALGÉSICOS"
     row[11] = "Referência"
     row[12] = "Regulado"
-    row[13] = "10,00"   # PF sem impostos
-    row[14] = "11,00"   # PF 0%
-    row[39] = "11,00"   # PMC sem impostos
-    row[40] = "12,00"   # PMC 0%
-    row[47] = pmc_18    # PMC 18% (MG)
+    row[13] = "10,00"
+    row[14] = "11,00"
+    row[39] = "11,00"
+    row[40] = "12,00"
+    row[47] = pmc_18
     row[65] = "Não"
     row[66] = "Não"
     row[67] = "Não"
@@ -91,8 +87,6 @@ def linha_medicamento_valida(
     row[72] = "TARJA VERMELHA"
     return tuple(row)
 
-
-# ─── Testes de _parse_decimal ────────────────────────────────────────────────
 
 class TestParseDecimal:
     def test_valor_com_virgula(self):
@@ -126,8 +120,6 @@ class TestParseDecimal:
         assert _parse_decimal("6662,98") == Decimal("6662.98")
 
 
-# ─── Testes de _parse_bool_flag ──────────────────────────────────────────────
-
 class TestParseBoolFlag:
     def test_sim(self):
         assert _parse_bool_flag("Sim") is True
@@ -152,8 +144,6 @@ class TestParseBoolFlag:
         assert _parse_bool_flag("SIM") is True
 
 
-# ─── Testes de _row_to_dict ──────────────────────────────────────────────────
-
 class TestRowToDict:
     def test_campos_obrigatorios_presentes(self):
         row = linha_medicamento_valida()
@@ -170,17 +160,15 @@ class TestRowToDict:
     def test_tracinho_vira_none(self):
         row = linha_medicamento_valida()
         result = _row_to_dict(row)
-        # EAN2 e EAN3 têm "    -     " no fixture
-        # ean1 tem valor, outros campos texto com tracinho viram None
-        assert result.get("restricao_hospitalar") is False  # flag
+
+
+        assert result.get("restricao_hospitalar") is False
 
     def test_pmc_none_quando_ausente(self):
         row = linha_medicamento_valida(pmc_18="    -     ")
         result = _row_to_dict(row)
         assert result["pmc_18"] is None
 
-
-# ─── Testes de parsear_xlsx ──────────────────────────────────────────────────
 
 class TestParsearXlsx:
     def test_retorna_lista_e_data(self):
@@ -207,7 +195,7 @@ class TestParsearXlsx:
 
     def test_linha_sem_codigo_ggrem_ignorada(self):
         row_invalida = list(linha_medicamento_valida())
-        row_invalida[3] = None  # Remove codigo_ggrem
+        row_invalida[3] = None
         xlsx_bytes = criar_xlsx_minimo([tuple(row_invalida)])
         medicamentos, _ = parsear_xlsx(xlsx_bytes)
         assert len(medicamentos) == 0
@@ -270,7 +258,7 @@ class TestLocalizarUrlXlsxAtual:
 
     @pytest.mark.asyncio
     async def test_resolve_link_relativo_contra_url_da_pagina(self):
-        # A pagina real da ANVISA usa hrefs relativos, nao absolutos.
+
         html = (
             '<a href="/anvisa/pt-br/assuntos/medicamentos/cmed/precos/arquivos/'
             'xls_conformidade_site_20260909_222937320.xlsx/@@download/file">PMC - xls</a>'

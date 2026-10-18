@@ -14,6 +14,7 @@ Estrutura da planilha (confirmada em 10/06/2026):
 """
 import logging
 import re
+import unicodedata
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from io import BytesIO
@@ -27,22 +28,20 @@ from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
-# URL pública da tabela de preços da ANVISA/CMED
+
 CMED_URL = (
     "https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/cmed/precos"
 )
 
-# Padrão do link de download do arquivo PMC (preço ao consumidor) na página da CMED.
-# O href pode ser absoluto ou relativo (ex: "/anvisa/pt-br/.../arquivo.xlsx/@@download/file").
+
 _LINK_XLSX_PMC = re.compile(
-    r'href="([^"]*xls_conformidade_site_[^"]*\.xlsx/@@download/file)"'
+    r'href="([^"]*(?:xls_conformidade_site_|lista_pmc_)[^"]*\.xlsx/@@download/file)"'
 )
 
-# Linha do cabeçalho real na planilha (1-indexed, conforme openpyxl)
+
 HEADER_ROW = 43
 
-# Mapeamento: nome da coluna no Excel → atributo no modelo
-# Índices confirmados por inspeção direta do arquivo real
+
 COLUMN_MAP = {
     0:  "substancia",
     1:  "cnpj",
@@ -61,7 +60,7 @@ COLUMN_MAP = {
     40: "pmc_0",
     41: "pmc_12",
     43: "pmc_17",
-    47: "pmc_18",   # MG padrão
+    47: "pmc_18",
     49: "pmc_19",
     53: "pmc_20",
     65: "restricao_hospitalar",
@@ -78,7 +77,7 @@ def _parse_decimal(value) -> Optional[Decimal]:
     if value is None:
         return None
     try:
-        # A planilha usa vírgula como separador decimal em alguns campos
+
         cleaned = str(value).strip().replace(",", ".").replace(" ", "")
         if cleaned in ("", "-", "    -     "):
             return None
@@ -98,17 +97,17 @@ def _extrair_data_publicacao(ws) -> str:
     """Extrai a data de publicação do cabeçalho da planilha (linha 3)."""
     try:
         valor = ws.cell(row=3, column=1).value or ""
-        # Ex: "Publicada em 10/06/2026 13h30min."
+
         match = re.search(r"\d{2}/\d{2}/\d{4}.*", str(valor))
         return match.group(0).rstrip(".") if match else str(valor)
     except Exception:
         return ""
 
 
-def _row_to_dict(row_values: tuple) -> dict:
+def _row_to_dict(row_values: tuple, mapa: dict = COLUMN_MAP) -> dict:
     """Converte uma linha da planilha em dicionário para o modelo."""
     data = {}
-    for col_idx, field_name in COLUMN_MAP.items():
+    for col_idx, field_name in mapa.items():
         if col_idx >= len(row_values):
             continue
         value = row_values[col_idx]
@@ -120,7 +119,7 @@ def _row_to_dict(row_values: tuple) -> dict:
         elif field_name in ("restricao_hospitalar", "cap", "confaz_87", "icms_0"):
             data[field_name] = _parse_bool_flag(value)
         else:
-            # Campo texto — limpar espaços e valores "-"
+
             cleaned = str(value).strip() if value is not None else None
             if cleaned in ("", "-", "    -     ", "None"):
                 cleaned = None
@@ -129,44 +128,85 @@ def _row_to_dict(row_values: tuple) -> dict:
     return data
 
 
+def _normalizar_cabecalho(valor) -> str:
+    """Remove acentos/espaços extras e põe em maiúsculas para comparar títulos."""
+    texto = unicodedata.normalize("NFKD", str(valor or ""))
+    texto = "".join(c for c in texto if not unicodedata.combining(c))
+    return re.sub(r"\s+", " ", texto).strip().upper()
+
+
+_COLUNAS_POR_TITULO = {
+    "RESTRICAO HOSPITALAR": "restricao_hospitalar",
+    "CAP": "cap",
+    "CONFAZ 87": "confaz_87",
+    "ICMS 0%": "icms_0",
+    "TARJA": "tarja",
+}
+
+
+def _montar_mapa_colunas(cabecalho: tuple) -> dict:
+    """Parte do COLUMN_MAP e reposiciona as colunas finais conforme o cabeçalho real."""
+    mapa = {i: c for i, c in COLUMN_MAP.items() if i < 65}
+    for idx, titulo in enumerate(cabecalho):
+        titulo = _normalizar_cabecalho(titulo)
+        if titulo in _COLUNAS_POR_TITULO:
+            mapa[idx] = _COLUNAS_POR_TITULO[titulo]
+        elif titulo.startswith("COMERCIALIZACAO"):
+            mapa[idx] = "comercializacao_2025"
+    return mapa
+
+
+def _localizar_cabecalho(ws, limite: int = 60) -> tuple[int, tuple] | None:
+    """Acha a linha de cabeçalho (a que contém 'CÓDIGO GGREM') nas primeiras linhas."""
+    for row_num, row in enumerate(ws.iter_rows(values_only=True, max_row=limite), start=1):
+        if len(row) > 3 and "GGREM" in _normalizar_cabecalho(row[3]):
+            return row_num, row
+    return None
+
+
 def parsear_xlsx(conteudo: bytes) -> tuple[list[dict], str]:
     """
     Lê o conteúdo binário do XLSX da CMED e retorna:
       - lista de dicionários (um por medicamento)
       - data de publicação extraída do cabeçalho
+
+    Aceita o layout antigo (aba única, cabeçalho na linha 43) e o novo
+    (abas "Cabeçalho" e "Lista PMC", cabeçalho na linha 1).
     """
     wb = openpyxl.load_workbook(
         BytesIO(conteudo),
         read_only=True,
         data_only=True
     )
-    ws = wb.active
+    ws_capa = wb.active
+    ws = wb["Lista PMC"] if "Lista PMC" in wb.sheetnames else ws_capa
 
-    data_publicacao = _extrair_data_publicacao(ws)
+    data_publicacao = _extrair_data_publicacao(ws_capa)
     medicamentos = []
-    encontrou_header = False
-    header_row_idx = 0
+
+    achado = _localizar_cabecalho(ws)
+    if achado:
+        header_row, cabecalho = achado
+        mapa = _montar_mapa_colunas(cabecalho)
+    else:
+        header_row, mapa = HEADER_ROW, COLUMN_MAP
 
     for row_num, row in enumerate(ws.iter_rows(values_only=True), start=1):
-        # Pular até a linha do cabeçalho real
-        if row_num < HEADER_ROW:
-            continue
-        if row_num == HEADER_ROW:
-            encontrou_header = True
-            header_row_idx = row_num
-            continue  # pula o cabeçalho
 
-        # Ignorar linhas completamente vazias
+        if row_num <= header_row:
+            continue
+
+
         if all(v is None for v in row):
             continue
 
-        # Ignorar linha se não tiver pelo menos SUBSTÂNCIA e PRODUTO
+
         if row[0] is None and row[8] is None:
             continue
 
-        record = _row_to_dict(row)
+        record = _row_to_dict(row, mapa)
 
-        # Validação mínima: precisa de codigo_ggrem (chave única)
+
         if not record.get("codigo_ggrem"):
             continue
 
@@ -234,7 +274,7 @@ def parsear_arquivo_local(caminho: str) -> tuple[list[dict], str]:
 
 TAMANHO_LOTE = 1000
 
-# Campos obrigatorios (nullable=False) na tabela medicamentos
+
 _CAMPOS_OBRIGATORIOS = ("codigo_ggrem", "substancia", "produto", "apresentacao")
 
 
@@ -251,7 +291,7 @@ def salvar_no_banco(
     especialmente contra um banco remoto.
     Retorna estatísticas da operação.
     """
-    # Import aqui para evitar dependência circular
+
     from sqlalchemy.dialects.postgresql import insert as pg_insert
 
     from app.db.models import Medicamento
